@@ -4,7 +4,7 @@ role: Йога, комплексное обучение, современный 
 tags:
 - Фитнес
 - Детям
-photo: ''
+photo: /uploads/trainers/titova.jpg
 bio: '[2–3 предложения о педагоге]'
 order: 14
 ---

@@ -76,7 +76,8 @@ button { font: inherit; }
 .tag-grey { background: #F3EEF0; color: var(--ink); }
 
 .ph { display: flex; align-items: center; justify-content: center; text-align: center; color: var(--ink-muted); font-size: 13px; padding: 16px; background: var(--rose-soft); overflow: hidden; }
-.ph img { width: 100%; height: 100%; object-fit: cover; }
+.ph:has(img) { padding: 0; }
+.ph img { width: 100%; height: 100%; object-fit: cover; object-position: center 22%; }
 .arch { border-radius: var(--r-arch); }
 
 .pills { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px; border-radius: 999px; background: var(--blush); width: fit-content; max-width: 100%; }

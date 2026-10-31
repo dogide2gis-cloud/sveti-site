@@ -5,7 +5,7 @@ tags:
 - Танцы
 - Фитнес
 - 60+
-photo: ''
+photo: /uploads/trainers/shorohova.jpg
 bio: '[2–3 предложения о педагоге]'
 order: 16
 ---

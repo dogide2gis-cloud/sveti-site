@@ -4,7 +4,7 @@ role: Хип-хоп, современный танец, комплексное �
 tags:
 - Танцы
 - Детям
-photo: ''
+photo: /uploads/trainers/kruzhilina.jpg
 bio: '[2–3 предложения о педагоге]'
 order: 9
 ---
