@@ -1,0 +1,55 @@
+---
+import Base from '../layouts/Base.astro';
+import settings from '../data/settings.json';
+import { url } from '../lib/util';
+---
+<Base title="Расписание" active="schedule" description="Расписание занятий студии танца «Свети» в Магнитогорске с онлайн-записью: оба филиала, все направления и педагоги.">
+  <section class="wrap" style="padding-top:32px">
+    <nav class="crumbs" aria-label="Хлебные крошки"><a href={url('/')}>Главная</a> / Расписание</nav>
+    <div class="row-head" style="margin-bottom:0">
+      <div>
+        <h1 class="h1">Расписание занятий</h1>
+        <p class="muted" style="margin-top:8px; max-width:620px">Выберите педагога, направление или зал — и запишитесь онлайн. Расписание обновляется автоматически.</p>
+      </div>
+      <a href={settings.fitbase_widget} class="btn btn-ghost" target="_blank" rel="noopener">Открыть в новом окне</a>
+    </div>
+  </section>
+
+  <section class="wrap" style="padding-top:24px">
+    <div class="frame card">
+      <iframe src={settings.fitbase_widget} title="Расписание и онлайн-запись студии «Свети»" loading="lazy" allow="payment"></iframe>
+    </div>
+    <p class="muted hint">Не загрузилось? <a href={settings.fitbase_widget} target="_blank" rel="noopener">Откройте расписание отдельно</a> или позвоните: <a href={'tel:' + settings.phone.replace(/[^+\d]/g, '')}>{settings.phone}</a></p>
+  </section>
+
+  <section class="wrap section section-last">
+    <div class="grid" style="--min:280px; gap:16px">
+      <div class="info" style="background:var(--rose)">
+        <div class="info-t">Впервые у нас?</div>
+        <p>Пробное занятие — от 300 ₽, а абонемент в тот же день — со скидкой 15%.</p>
+        <a href={url('/abonementy/')}>Цены и абонементы →</a>
+      </div>
+      <div class="info" style="background:var(--rose-soft)">
+        <div class="info-t">Абонемент на оба филиала</div>
+        <p>Комсомольская, 16 и Советская, 161 — ходите туда, где удобнее.</p>
+        <a href={url('/filialy/')}>Где мы находимся →</a>
+      </div>
+      <div class="info" style="background:var(--blush)">
+        <div class="info-t">Нужна помощь с выбором?</div>
+        <p>Позвоните, и администратор подберёт группу по возрасту и уровню.</p>
+        <a href={'tel:' + settings.phone.replace(/[^+\d]/g, '')}>{settings.phone}</a>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .frame { overflow: hidden; padding: 0; }
+  .frame iframe { display: block; width: 100%; height: 1100px; border: 0; }
+  .hint { font-size: 14px; margin-top: 12px; }
+  .info { padding: 24px; border-radius: var(--r-lg); display: flex; flex-direction: column; gap: 8px; }
+  .info-t { font-size: 18px; font-weight: 700; }
+  .info p { font-size: 15px; line-height: 22px; flex-grow: 1; }
+  .info a { color: var(--ink); font-weight: 700; }
+  @media (max-width: 640px) { .frame iframe { height: 1000px; } }
+</style>

@@ -1,0 +1,93 @@
+---
+import settings from '../data/settings.json';
+import { url } from '../lib/util';
+interface Props { active?: string }
+const { active = '' } = Astro.props;
+const items = [
+  { id: 'branches', label: 'Филиалы', href: '/filialy/' },
+  { id: 'directions', label: 'Направления', href: '/napravleniya/' },
+  { id: 'courses', label: 'Курсы', href: '/kursy/' },
+  { id: 'schedule', label: 'Расписание', href: '/raspisanie/' },
+  { id: 'prices', label: 'Абонементы', href: '/abonementy/' },
+  { id: 'trainers', label: 'Педагоги', href: '/pedagogi/' },
+  { id: 'promo', label: 'Акции', href: '/#promo' }
+];
+const tel = 'tel:' + settings.phone.replace(/[^+\d]/g, '');
+---
+<header class="hdr">
+  <div class="top">
+    <div class="wrap top-in">
+      <div class="top-l">
+        <strong>{settings.city}</strong>
+        <a href={url('/filialy/')}>Комсомольская, 16</a>
+        <a href={url('/filialy/')}>Советская, 161</a>
+      </div>
+      <div class="top-r">
+        <a href={url('/abonementy/#rules')}>Заморозка абонемента</a>
+        <a href={url('/#faq')}>Вопросы и ответы</a>
+        <a href={settings.vk} class="vk" rel="noopener">ВКонтакте</a>
+      </div>
+    </div>
+  </div>
+  <div class="wrap bar">
+    <a href={url('/')} class="logo" aria-label="Свети — на главную">
+      <img src={url('/uploads/logo-ink.png')} alt="Свети — Танцуй Люби" width="148" height="48">
+    </a>
+    <nav class="nav" aria-label="Главное меню">
+      {items.map((i) => (
+        <a href={url(i.href)} aria-current={i.id === active ? 'page' : undefined}>{i.label}</a>
+      ))}
+    </nav>
+    <div class="actions">
+      <a href={tel} class="phone">{settings.phone}</a>
+      <a href={url('/raspisanie/')} class="btn btn-primary btn-inline cta">Пробное от 300 ₽</a>
+    </div>
+    <details class="burger">
+      <summary aria-label="Открыть меню">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </summary>
+      <div class="drawer">
+        {items.map((i) => (
+          <a href={url(i.href)} aria-current={i.id === active ? 'page' : undefined}>{i.label}</a>
+        ))}
+        <a href={tel} class="drawer-phone">{settings.phone}</a>
+        <a href={url('/raspisanie/')} class="btn btn-primary">Записаться на пробное</a>
+      </div>
+    </details>
+  </div>
+</header>
+
+<style>
+  .hdr { background: var(--milk); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 50; }
+  .top { background: var(--ink); color: var(--milk); font-size: 13px; line-height: 18px; }
+  .top-in { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 24px; padding-top: 8px; padding-bottom: 8px; }
+  .top-l, .top-r { display: flex; flex-wrap: wrap; gap: 4px 20px; }
+  .top a { color: #F3E3E9; text-decoration: none; }
+  .top a:hover { color: var(--white); text-decoration: underline; }
+  .top .vk { color: var(--rose); font-weight: 700; }
+  .bar { display: flex; align-items: center; gap: 12px 24px; padding-top: 10px; padding-bottom: 10px; }
+  .logo img { height: 46px; width: auto; }
+  .nav { display: flex; flex-wrap: nowrap; gap: 0; flex: 1; font-size: 14.5px; font-weight: 600; }
+  .nav a { white-space: nowrap; padding: 10px 11px; border-radius: 999px; text-decoration: none; color: var(--ink); }
+  .nav a:hover { background: var(--blush); }
+  .nav a[aria-current="page"] { background: var(--rose-soft); }
+  .actions { display: flex; align-items: center; gap: 16px; }
+  .phone { color: var(--ink); text-decoration: none; font-weight: 700; white-space: nowrap; }
+  .cta { min-height: 48px; padding: 0 22px; font-size: 15px; white-space: nowrap; }
+  .burger { display: none; margin-left: auto; position: relative; }
+  .burger summary { list-style: none; width: 48px; height: 48px; border-radius: 999px; display: flex; align-items: center; justify-content: center; background: var(--blush); cursor: pointer; color: var(--ink); }
+  .burger summary::-webkit-details-marker { display: none; }
+  .drawer { position: absolute; right: 0; top: 56px; width: min(320px, calc(100vw - 32px)); background: var(--white); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 12px; display: flex; flex-direction: column; gap: 2px; box-shadow: 0 8px 24px rgba(58,42,48,.12); }
+  .drawer a:not(.btn) { padding: 12px 14px; border-radius: 12px; color: var(--ink); text-decoration: none; font-weight: 600; }
+  .drawer a[aria-current="page"] { background: var(--rose-soft); }
+  .drawer-phone { font-weight: 700 !important; }
+  .drawer .btn { margin-top: 8px; width: 100%; }
+  @media (max-width: 1260px) {
+    .nav, .actions { display: none; }
+    .burger { display: block; }
+  }
+  @media (max-width: 640px) {
+    .top-r { display: none; }
+    .logo img { height: 40px; }
+  }
+</style>

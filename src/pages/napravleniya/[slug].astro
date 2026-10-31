@@ -1,0 +1,144 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Img from '../../components/Img.astro';
+import prices from '../../data/prices.json';
+import { url, rub } from '../../lib/util';
+
+export async function getStaticPaths() {
+  const list = await getCollection('directions');
+  return list.map((d) => ({ params: { slug: d.id }, props: { d } }));
+}
+const { d } = Astro.props;
+const data = d.data;
+const allTrainers = await getCollection('trainers');
+const trainers = data.trainers.map((n) => allTrainers.find((t) => t.data.name === n)).filter(Boolean);
+const group = data.category === 'Детям'
+  ? (data.title.startsWith('Комплекс') ? prices.groups.find((g) => g.name.startsWith('Комплекс')) : prices.groups.find((g) => g.name === 'Дети'))
+  : prices.groups.find((g) => g.name === 'Взрослые');
+const trial = group?.plans.find((p) => p.title === 'Пробное')?.price ?? 0;
+const similar = (await getCollection('directions')).filter((x) => x.data.category === data.category && x.id !== d.id).slice(0, 3);
+const facts = [
+  { k: 'Возраст', v: data.age }, { k: 'Уровень', v: data.level }, { k: 'Длительность', v: data.duration }, { k: 'Пробное', v: rub(trial) }
+].filter((f) => f.v);
+---
+<Base title={data.title} active="directions" description={`${data.title} в студии танца «Свети», Магнитогорск. ${data.age ? 'Возраст: ' + data.age + '. ' : ''}Пробное занятие ${rub(trial)}.`}>
+  <section class="wrap" style="padding-top:32px">
+    <nav class="crumbs" aria-label="Хлебные крошки"><a href={url('/')}>Главная</a> / <a href={url('/napravleniya/')}>Направления</a> / {data.title}</nav>
+    <div class="hero">
+      <div class="hero-t">
+        <div class="tags"><span class="tag">{data.category}</span>{data.level && <span class="tag tag-grey">{data.level}</span>}</div>
+        <h1 class="h1 big">{data.title}</h1>
+        <p class="muted lead">{data.short}</p>
+        <div class="btns">
+          <a href={url('/raspisanie/')} class="btn btn-primary">Записаться на пробное — {rub(trial)}</a>
+          <a href="#dir-schedule" class="btn btn-ghost">Расписание группы</a>
+        </div>
+      </div>
+      <Img src={data.photo} alt={data.title} label={`Фото: ${data.title}`} class="arch hero-img" bg="var(--rose)" />
+    </div>
+  </section>
+
+  <section class="wrap" style="padding-top:48px">
+    <div class="grid" style="--min:200px; gap:16px">
+      {facts.map((f) => <div class="fact"><div class="muted fact-k">{f.k}</div><div class="fact-v">{f.v}</div></div>)}
+    </div>
+  </section>
+
+  {data.benefits.length > 0 && (
+    <section class="wrap section two">
+      <h2 class="h2 two-l">Что вас ждёт на занятии</h2>
+      <div class="grid two-r" style="--min:240px; gap:16px">
+        {data.benefits.map((b) => (
+          <div class="card ben">
+            <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--berry)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>
+            <span>{b}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  )}
+
+  {trainers.length > 0 && (
+    <section class="wrap section">
+      <h2 class="h2" style="margin-bottom:32px">Педагоги направления</h2>
+      <div class="grid" style="--min:220px">
+        {trainers.map((t, i) => (
+          <a href={url('/pedagogi/')} class="tr">
+            <Img src={t!.data.photo} alt={t!.data.name} label="Портрет" class="arch tr-img" bg={['var(--rose)', 'var(--rose-soft)', 'var(--blush)'][i % 3]} />
+            <span class="tr-n">{t!.data.name}</span>
+            <span class="muted tr-r">{t!.data.role}</span>
+          </a>
+        ))}
+      </div>
+    </section>
+  )}
+
+  <section id="dir-schedule" class="wrap section">
+    <div class="row-head"><h2 class="h2">Расписание</h2><a href={url('/raspisanie/')} class="link-more">Всё расписание →</a></div>
+    <div class="card sched">
+      <p>Актуальное расписание и онлайн-запись на «{data.title}» — в общем расписании студии: выберите направление в фильтре «Занятие».</p>
+      <a href={url('/raspisanie/')} class="btn btn-primary">Открыть расписание и записаться</a>
+    </div>
+  </section>
+
+  {group && (
+    <section class="wrap section">
+      <div class="price">
+        <div class="price-l">
+          <h2 class="h2">Стоимость</h2>
+          <p style="margin-top:8px">{group.note}. Абонемент действует на все направления в обоих филиалах.</p>
+          <a href={url('/abonementy/')} class="link-more" style="color:var(--ink)">Все абонементы и скидки →</a>
+        </div>
+        <div class="price-r">
+          {group.plans.map((p) => <div class="pcell"><div class="muted pcell-k">{p.title}</div><div class="pcell-v">{rub(p.price)}</div></div>)}
+        </div>
+      </div>
+    </section>
+  )}
+
+  {similar.length > 0 && (
+    <section class="wrap section section-last">
+      <h2 class="h2" style="margin-bottom:24px">Похожие направления</h2>
+      <div class="chips">
+        {similar.map((s) => <a href={url('/napravleniya/' + s.id + '/')} class="chip">{s.data.title}</a>)}
+        <a href={url('/napravleniya/')} class="chip chip-all">Все направления →</a>
+      </div>
+    </section>
+  )}
+</Base>
+
+<style>
+  .hero { display: flex; flex-wrap: wrap; gap: 40px 64px; align-items: center; }
+  .hero-t { flex: 1 1 440px; min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; }
+  .big { font-size: clamp(44px, 7vw, 72px); }
+  .lead { font-size: 19px; line-height: 30px; max-width: 520px; }
+  .btns { display: flex; flex-wrap: wrap; gap: 12px; }
+  :global(.hero-img) { flex: 1 1 360px; height: 460px; }
+  .fact { padding: 20px 24px; border-radius: var(--r-lg); background: var(--blush); }
+  .fact-k { font-size: 13px; }
+  .fact-v { font-size: 18px; font-weight: 700; }
+  .two { display: flex; flex-wrap: wrap; gap: 32px 64px; }
+  .two-l { flex: 1 1 300px; }
+  .two-r { flex: 2 1 520px; }
+  .ben { display: flex; gap: 14px; align-items: flex-start; padding: 20px; }
+  .ben svg { flex-shrink: 0; }
+  .tr { display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: var(--ink); }
+  :global(.tr-img) { aspect-ratio: 3 / 4; }
+  .tr-n { font-size: 18px; font-weight: 700; margin-top: 4px; }
+  .tr-r { font-size: 14px; line-height: 20px; }
+  .sched { padding: 28px; display: flex; flex-wrap: wrap; gap: 16px 32px; align-items: center; justify-content: space-between; }
+  .sched p { flex: 1 1 360px; }
+  .price { border-radius: var(--r-xl); background: var(--rose-soft); padding: 40px; display: flex; flex-wrap: wrap; gap: 24px 48px; align-items: center; }
+  .price-l { flex: 1 1 300px; display: flex; flex-direction: column; gap: 12px; }
+  .price-r { flex: 2 1 480px; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
+  .pcell { padding: 16px; border-radius: 16px; background: var(--milk); }
+  .pcell-k { font-size: 13px; }
+  .pcell-v { font-family: var(--f-display); font-size: 30px; line-height: 1.15; font-weight: 600; }
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; }
+  .chip { padding: 12px 18px; border-radius: 999px; background: var(--blush); color: var(--ink); text-decoration: none; font-weight: 600; }
+  .chip-all { background: var(--ink); color: var(--white); }
+  .chip-all:hover { color: var(--white); }
+  @media (max-width: 640px) { :global(.hero-img) { height: 340px; } .price { padding: 24px 20px; } }
+</style>

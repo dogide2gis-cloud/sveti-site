@@ -1,0 +1,250 @@
+# Админ-панель сайта «Свети» (Sveltia CMS).
+# Вход: https://dogide2gis-cloud.github.io/sveti-site/admin/ → «Войти с токеном GitHub».
+# После сохранения изменений сайт пересобирается сам за 1–2 минуты.
+
+backend:
+  name: github
+  repo: dogide2gis-cloud/sveti-site
+  branch: main
+  commit_messages:
+    create: 'Добавлено: {{collection}} «{{slug}}»'
+    update: 'Изменено: {{collection}} «{{slug}}»'
+    delete: 'Удалено: {{collection}} «{{slug}}»'
+    uploadMedia: 'Загружен файл {{path}}'
+    deleteMedia: 'Удалён файл {{path}}'
+
+media_folder: public/uploads
+public_folder: /uploads
+site_url: https://dogide2gis-cloud.github.io/sveti-site/
+display_url: https://dogide2gis-cloud.github.io/sveti-site/
+slug:
+  encoding: ascii
+  clean_accents: true
+
+collections:
+  # ---------- КУРСЫ ----------
+  - name: courses
+    label: Курсы
+    label_singular: Курс
+    description: Короткие программы. Статус «Идёт набор / Идёт сейчас / Завершён» ставится сам по датам.
+    folder: src/content/courses
+    extension: md
+    format: frontmatter
+    create: true
+    slug: '{{title}}'
+    summary: '{{title}} — {{teacher}} ({{start}})'
+    sortable_fields: [start, title]
+    fields:
+      - { name: title, label: Название курса, widget: string, hint: 'Например: Курс High Heels' }
+      - { name: poster_title, label: Крупный заголовок «кистью», widget: string, required: false, hint: 'Короткое слово для первого экрана, например HIGH HEELS. Лучше латиницей или коротко.' }
+      - { name: teacher, label: Педагог (подпись), widget: string, required: false }
+      - { name: start, label: Дата начала, widget: datetime, format: 'YYYY-MM-DD', date_format: 'DD.MM.YYYY', time_format: false }
+      - { name: end, label: Дата окончания, widget: datetime, format: 'YYYY-MM-DD', date_format: 'DD.MM.YYYY', time_format: false }
+      - { name: days, label: Дни, widget: string, required: false, hint: 'Например: Понедельник и среда' }
+      - { name: time, label: Время, widget: string, required: false, hint: 'Например: 20:00' }
+      - { name: branch, label: Филиал, widget: select, options: ['Комсомольская, 16', 'Советская, 161', 'Оба филиала'], required: false }
+      - { name: lessons, label: Количество занятий, widget: number, value_type: int, required: false }
+      - { name: price, label: 'Стоимость курса, ₽', widget: number, value_type: int, required: false, hint: '0 — цена не показывается' }
+      - { name: poster, label: Афиша (карточка на витрине), widget: image, required: false, hint: 'Квадрат или 4:5, как пост во ВК' }
+      - { name: photo, label: Фото педагога для первого экрана, widget: image, required: false, hint: 'Вертикальное фото без текста поверх' }
+      - { name: tagline, label: Слова-столбик (Пластика / Уверенность …), widget: list, required: false }
+      - name: gains
+        label: Что ты получишь
+        widget: list
+        required: false
+        fields:
+          - { name: title, label: Заголовок, widget: string }
+          - { name: text, label: Пояснение, widget: text, required: false }
+      - name: program
+        label: Программа
+        widget: list
+        required: false
+        fields:
+          - { name: title, label: 'Этап (например, Неделя 1)', widget: string }
+          - { name: text, label: Что делаем, widget: text, required: false }
+      - { name: for_whom, label: 'Тебе подойдёт, если…', widget: list, required: false }
+      - { name: bring, label: Что взять с собой, widget: list, required: false }
+      - { name: teacher_bio, label: О педагоге, widget: text, required: false }
+      - { name: seats_note, label: Пометка о местах, widget: string, required: false, default: 'Количество мест ограничено' }
+      - { name: draft, label: Скрыть с сайта (черновик), widget: boolean, default: false }
+
+  # ---------- НАПРАВЛЕНИЯ ----------
+  - name: directions
+    label: Направления
+    label_singular: Направление
+    folder: src/content/directions
+    extension: md
+    format: frontmatter
+    create: true
+    slug: '{{title}}'
+    summary: '{{title}} · {{category}}'
+    sortable_fields: [order, title, category]
+    view_groups:
+      - { label: Категория, field: category }
+    fields:
+      - { name: title, label: Название, widget: string }
+      - { name: category, label: Категория, widget: select, options: ['Детям', 'Взрослым', 'Фитнес', '60+'] }
+      - { name: age, label: Возраст, widget: string, required: false, hint: 'Например: 6–8 лет, 14+, с нуля' }
+      - { name: level, label: Уровень, widget: string, required: false }
+      - { name: duration, label: Длительность занятия, widget: string, required: false }
+      - name: trainers
+        label: Педагоги
+        widget: relation
+        collection: trainers
+        search_fields: [name]
+        value_field: name
+        display_fields: [name]
+        multiple: true
+        required: false
+      - { name: photo, label: Фото, widget: image, required: false }
+      - { name: short, label: Короткое описание, widget: text, required: false }
+      - { name: benefits, label: Что ждёт на занятии, widget: list, required: false }
+      - { name: featured, label: Показывать в популярных, widget: boolean, default: false }
+      - { name: order, label: Порядок в списке, widget: number, value_type: int, default: 100 }
+      - { name: fitbase_filter, label: Название в Fitbase, widget: string, required: false }
+
+  # ---------- ПЕДАГОГИ ----------
+  - name: trainers
+    label: Педагоги
+    label_singular: Педагог
+    folder: src/content/trainers
+    extension: md
+    format: frontmatter
+    create: true
+    slug: '{{name}}'
+    identifier_field: name
+    summary: '{{name}} — {{role}}'
+    sortable_fields: [order, name]
+    fields:
+      - { name: name, label: Имя и фамилия, widget: string }
+      - { name: role, label: Направления (подпись), widget: string, required: false }
+      - { name: tags, label: Фильтры, widget: select, multiple: true, options: ['Танцы', 'Детям', 'Фитнес', '60+'], required: false }
+      - { name: photo, label: Портрет, widget: image, required: false, hint: 'Вертикальное фото 3:4, светлый фон' }
+      - { name: bio, label: О педагоге, widget: text, required: false }
+      - { name: order, label: Порядок, widget: number, value_type: int, default: 100 }
+
+  # ---------- СТРАНИЦЫ И НАСТРОЙКИ ----------
+  - name: pages
+    label: Страницы и настройки
+    files:
+      - name: home
+        label: Главная страница
+        file: src/data/home.json
+        format: json
+        fields:
+          - name: slides
+            label: Слайды наверху
+            widget: list
+            fields:
+              - { name: tag, label: Метка, widget: string }
+              - { name: title, label: Заголовок, widget: string }
+              - { name: text, label: Текст, widget: text }
+              - { name: button, label: Текст кнопки, widget: string }
+              - { name: link, label: 'Ссылка кнопки (например /kursy/)', widget: string }
+              - { name: image, label: Картинка, widget: image, required: false }
+              - { name: color, label: Цвет фона, widget: select, options: [{ label: Розовый, value: rose }, { label: Мягкий розовый, value: soft }, { label: Светлый, value: blush }] }
+          - name: audiences
+            label: Быстрый выбор (Детям / Взрослым …)
+            widget: list
+            fields:
+              - { name: title, label: Заголовок, widget: string }
+              - { name: note, label: Подпись от руки, widget: string }
+              - { name: text, label: Текст, widget: string }
+              - { name: category, label: Категория для фильтра, widget: select, options: ['Детям', 'Взрослым', 'Фитнес', '60+'] }
+          - name: stats
+            label: Цифры
+            widget: list
+            fields:
+              - { name: value, label: Число, widget: string }
+              - { name: label, label: Подпись, widget: string }
+          - { name: quote, label: Цитата (идея бренда), widget: text }
+          - { name: quote_author, label: Автор цитаты, widget: string }
+          - name: events
+            label: Жизнь студии
+            widget: list
+            fields:
+              - { name: tag, label: Метка, widget: string }
+              - { name: title, label: Заголовок, widget: string }
+              - { name: image, label: Фото, widget: image, required: false }
+              - { name: link, label: Ссылка (например, альбом ВК), widget: string }
+
+      - name: prices
+        label: Абонементы и скидки
+        file: src/data/prices.json
+        format: json
+        fields:
+          - name: groups
+            label: Категории абонементов
+            widget: list
+            fields:
+              - { name: name, label: Название, widget: string }
+              - { name: note, label: Пояснение, widget: string }
+              - name: plans
+                label: Абонементы
+                widget: list
+                fields:
+                  - { name: title, label: Название, widget: string }
+                  - { name: price, label: 'Цена, ₽', widget: number, value_type: int }
+                  - { name: note, label: Пояснение, widget: string, required: false }
+                  - { name: popular, label: Отметка «Популярный», widget: boolean, default: false }
+          - name: discounts
+            label: Скидки
+            widget: list
+            fields:
+              - { name: value, label: Размер (например 15%), widget: string }
+              - { name: title, label: Кому, widget: string }
+              - { name: text, label: Условие, widget: string }
+          - name: rules
+            label: Условия
+            widget: list
+            fields:
+              - { name: title, label: Заголовок, widget: string }
+              - { name: text, label: Текст, widget: text }
+
+      - name: branches
+        label: Филиалы
+        file: src/data/branches.json
+        format: json
+        fields:
+          - name: items
+            label: Филиалы
+            widget: list
+            fields:
+              - { name: name, label: Короткое название, widget: string }
+              - { name: address, label: Полный адрес, widget: string }
+              - { name: halls, label: Залы, widget: list }
+              - { name: hours, label: Часы работы, widget: string }
+              - { name: how_to_get, label: Как добраться, widget: text }
+              - { name: parking, label: Парковка, widget: string }
+              - { name: map_query, label: Адрес для карты, widget: string }
+              - { name: photos, label: Фото залов, widget: list, field: { name: photo, label: Фото, widget: image } }
+
+      - name: faq
+        label: Вопросы и ответы
+        file: src/data/faq.json
+        format: json
+        fields:
+          - name: items
+            label: Вопросы
+            widget: list
+            fields:
+              - { name: q, label: Вопрос, widget: string }
+              - { name: a, label: Ответ, widget: text }
+
+      - name: settings
+        label: Контакты и общие настройки
+        file: src/data/settings.json
+        format: json
+        fields:
+          - { name: name, label: Короткое название, widget: string }
+          - { name: full_name, label: Полное название, widget: string }
+          - { name: city, label: Город, widget: string }
+          - { name: phone, label: Телефон, widget: string }
+          - { name: vk, label: Ссылка ВКонтакте, widget: string }
+          - { name: telegram, label: Ссылка Telegram, widget: string, required: false }
+          - { name: fitbase_widget, label: Ссылка на виджет расписания Fitbase, widget: string }
+          - { name: app_note, label: Текст про приложение, widget: string, required: false }
+          - { name: legal, label: Юрлицо и ИНН (в подвале), widget: string }
+          - { name: policy_url, label: Ссылка на политику ПДн (если своя), widget: string, required: false }
+          - { name: offer_url, label: Ссылка на оферту, widget: string, required: false }
+          - { name: seo_description, label: Описание сайта для поисковиков, widget: text }

@@ -1,0 +1,63 @@
+---
+import settings from '../data/settings.json';
+import { url } from '../lib/util';
+const cols = [
+  { title: 'Занятия', links: [
+    ['Все направления', '/napravleniya/'], ['Курсы', '/kursy/'], ['Детям', '/napravleniya/?cat=Детям'],
+    ['Взрослым', '/napravleniya/?cat=Взрослым'], ['Фитнес и растяжка', '/napravleniya/?cat=Фитнес'], ['Танцы 60+', '/napravleniya/?cat=60%2B']
+  ] },
+  { title: 'Студия', links: [
+    ['Филиалы и залы', '/filialy/'], ['Расписание', '/raspisanie/'], ['Педагоги', '/pedagogi/'], ['Жизнь студии', '/#events']
+  ] },
+  { title: 'Клиентам', links: [
+    ['Абонементы и цены', '/abonementy/'], ['Акции и скидки', '/#promo'], ['Заморозка абонемента', '/abonementy/#rules'], ['Вопросы и ответы', '/#faq']
+  ] }
+];
+const tel = 'tel:' + settings.phone.replace(/[^+\d]/g, '');
+---
+<footer class="ftr">
+  <div class="wrap">
+    <div class="ftr-top">
+      <div class="ftr-brand">
+        <img src={url('/uploads/logo-white.png')} alt="Свети — Танцуй Люби" width="200" height="65">
+        <a href={tel} class="ftr-phone">{settings.phone}</a>
+        <p>ул. Комсомольская, 16<br>ул. Советская, 161<br>{settings.city}</p>
+        <div class="soc">
+          <a href={settings.vk} rel="noopener">ВКонтакте</a>
+          {settings.telegram && <a href={settings.telegram} rel="noopener">Telegram</a>}
+        </div>
+      </div>
+      {cols.map((c) => (
+        <div class="ftr-col">
+          <div class="ftr-h">{c.title}</div>
+          {c.links.map(([t, h]) => <a href={url(h)}>{t}</a>)}
+        </div>
+      ))}
+    </div>
+    <div class="ftr-bot">
+      <div>© {new Date().getFullYear()} {settings.full_name}. {settings.legal}</div>
+      <div class="legal">
+        <a href={settings.policy_url ? url(settings.policy_url) : url('/politika/')}>Политика обработки персональных данных</a>
+        {settings.offer_url && <a href={url(settings.offer_url)}>Договор-оферта</a>}
+      </div>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .ftr { background: var(--ink); color: var(--milk); }
+  .ftr-top { display: flex; flex-wrap: wrap; gap: 40px 64px; padding: 64px 0 40px; border-bottom: 1px solid #5C4850; }
+  .ftr-brand { flex: 1 1 260px; display: flex; flex-direction: column; gap: 14px; }
+  .ftr-brand img { width: 200px; height: auto; }
+  .ftr-brand p { font-size: 14px; line-height: 21px; color: #E6D3DA; }
+  .ftr-phone { color: var(--milk); text-decoration: none; font-size: 22px; font-weight: 700; }
+  .soc { display: flex; gap: 10px; flex-wrap: wrap; }
+  .soc a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid #8C7480; color: var(--milk); text-decoration: none; font-size: 14px; font-weight: 600; }
+  .ftr-col { flex: 1 1 170px; display: flex; flex-direction: column; gap: 10px; }
+  .ftr-h { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--rose); margin-bottom: 4px; }
+  .ftr-col a { color: #F3E3E9; text-decoration: none; font-size: 15px; }
+  .ftr-col a:hover, .ftr-phone:hover { color: var(--white); text-decoration: underline; }
+  .ftr-bot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px 32px; padding: 24px 0 32px; font-size: 13px; color: #CDB8C1; }
+  .legal { display: flex; flex-wrap: wrap; gap: 6px 20px; }
+  .legal a { color: #CDB8C1; }
+</style>

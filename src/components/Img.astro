@@ -1,0 +1,9 @@
+---
+// Картинка из админки или аккуратная заглушка, пока фото нет.
+import { url } from '../lib/util';
+interface Props { src?: string; alt: string; label?: string; class?: string; style?: string; bg?: string }
+const { src, alt, label = 'Фото', class: cls = '', style = '', bg = '' } = Astro.props;
+---
+<div class={`ph ${cls}`} style={(bg ? `background:${bg};` : '') + style}>
+  {src ? <img src={url(src)} alt={alt} loading="lazy" decoding="async"> : <span>[{label}]</span>}
+</div>

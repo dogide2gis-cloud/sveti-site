@@ -1,0 +1,110 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import settings from '../../data/settings.json';
+import { url, rub, dateShort, courseStatus, statusLabel } from '../../lib/util';
+
+const order = { now: 0, soon: 1, past: 2 } as const;
+const courses = (await getCollection('courses', (c) => !c.data.draft))
+  .map((c) => ({ c, s: courseStatus(c.data.start, c.data.end) }))
+  .sort((a, b) => order[a.s] - order[b.s] || (a.s === 'past' ? b.c.data.start.getTime() - a.c.data.start.getTime() : a.c.data.start.getTime() - b.c.data.start.getTime()));
+const tabs = [['all', 'Все'], ['soon', 'Идёт набор'], ['now', 'Сейчас идут'], ['past', 'Прошедшие']] as const;
+const badge = { soon: 'b-soon', now: 'b-now', past: 'b-past' };
+---
+<Base title="Курсы" active="courses" description="Танцевальные курсы студии «Свети» в Магнитогорске: High Heels, контемпорари, балет и другие короткие программы с результатом.">
+  <section class="wrap" style="padding-top:32px">
+    <nav class="crumbs" aria-label="Хлебные крошки"><a href={url('/')}>Главная</a> / Курсы</nav>
+    <div class="row-head" style="margin-bottom:0">
+      <div>
+        <div class="kicker">Танцевальные курсы</div>
+        <div class="brushwrap">
+          <svg aria-hidden="true" viewBox="0 0 400 100" preserveAspectRatio="none" class="brushbg"><path fill="#F7C9D5" d="M8 58 C40 30 120 22 200 24 S360 18 392 40 C396 60 380 74 330 78 C250 86 120 92 30 84 C10 80 4 70 8 58 Z"/></svg>
+          <h1 class="ktitle">Курсы</h1>
+        </div>
+        <p class="muted" style="max-width:560px">Короткие программы на 1–2 месяца: одна цель, один педагог, результат к последнему занятию.</p>
+      </div>
+      <a href={settings.vk} class="btn btn-ghost" rel="noopener">Узнавать о новых курсах первой</a>
+    </div>
+  </section>
+
+  <section class="wrap" style="padding-top:32px">
+    <div class="pills" role="group" aria-label="Статус курса" data-filter>
+      {tabs.map(([k, l]) => <button type="button" class="pill" data-st={k} aria-pressed={k === 'all' ? 'true' : 'false'}>{l}<span class="count">{k === 'all' ? courses.length : courses.filter((x) => x.s === k).length}</span></button>)}
+    </div>
+  </section>
+
+  <section class="wrap" style="padding-top:32px">
+    <div class="grid" style="gap:28px 24px" data-list>
+      {courses.map(({ c, s }) => (
+        <a href={url('/kursy/' + c.id + '/')} class={`kc ${s === 'past' ? 'kc-past' : ''}`} data-st={s}>
+          <span class="kc-cover">
+            {c.data.poster
+              ? <img src={url(c.data.poster)} alt={`Афиша: ${c.data.title}`} loading="lazy">
+              : <span class="kc-ph">
+                  <span class="kc-k">Танцевальный курс</span>
+                  <span class="kc-pt">{c.data.poster_title || c.data.title}</span>
+                  <span class="kc-sig">{c.data.teacher}</span>
+                </span>}
+            <span class={`kc-badge ${badge[s]}`}>{statusLabel[s]}</span>
+          </span>
+          <span class="kc-row"><span class="kc-name">{c.data.title}</span>{c.data.price > 0 && <span class="kc-price">{rub(c.data.price)}</span>}</span>
+          <span class="kc-teacher">{c.data.teacher}</span>
+          <span class="muted kc-meta">{dateShort(c.data.start)} — {dateShort(c.data.end)} · {c.data.days}{c.data.time && ` в ${c.data.time}`}<br>{c.data.branch}{c.data.lessons ? ` · ${c.data.lessons} занятий` : ''}</span>
+        </a>
+      ))}
+    </div>
+    <p class="empty muted" hidden data-empty>В этом разделе пока нет курсов.</p>
+  </section>
+
+  <section class="wrap section section-last">
+    <div class="want">
+      <div style="flex:1 1 360px">
+        <div class="want-t">Хочешь свой курс?</div>
+        <p style="margin-top:8px">Напиши, какое направление ждёшь, — соберём группу и сообщим о старте.</p>
+      </div>
+      <a href={settings.vk} class="btn btn-primary" rel="noopener">Написать во ВКонтакте</a>
+    </div>
+  </section>
+</Base>
+
+<script>
+  const btns = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-filter] [data-st]'));
+  const cards = Array.from(document.querySelectorAll<HTMLElement>('[data-list] [data-st]'));
+  const empty = document.querySelector<HTMLElement>('[data-empty]');
+  btns.forEach((b) => b.addEventListener('click', () => {
+    const st = b.dataset.st;
+    btns.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    let n = 0;
+    cards.forEach((c) => { const show = st === 'all' || c.dataset.st === st; c.hidden = !show; if (show) n++; });
+    if (empty) empty.hidden = n > 0;
+  }));
+</script>
+
+<style>
+  .kicker { font-size: 13px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
+  .brushwrap { position: relative; display: inline-block; margin: 4px 0 8px; }
+  .brushbg { position: absolute; left: -16px; top: 22px; width: calc(100% + 40px); height: 70px; }
+  .ktitle { position: relative; font-family: var(--f-script); font-weight: 700; font-size: clamp(72px, 10vw, 96px); line-height: 1; color: var(--brush-text); }
+  .kc { display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: var(--ink); }
+  .kc[hidden] { display: none; }
+  .kc-past { opacity: .78; }
+  .kc-cover { position: relative; aspect-ratio: 4 / 5; border-radius: var(--r-lg); overflow: hidden; background: var(--poster); margin-bottom: 8px; display: block; }
+  .kc-cover img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s; }
+  .kc:hover .kc-cover img { transform: scale(1.03); }
+  .kc-ph { position: absolute; inset: 0; padding: 28px; display: flex; flex-direction: column; justify-content: space-between; }
+  .kc-k { font-size: 12px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
+  .kc-pt { font-family: var(--f-brush); font-size: 60px; line-height: .95; color: var(--brush-text); transform: rotate(-4deg); }
+  .kc-sig { font-family: var(--f-script); font-size: 30px; align-self: flex-end; }
+  .kc-badge { position: absolute; top: 16px; left: 16px; font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 999px; }
+  .b-soon { background: var(--berry); color: var(--white); }
+  .b-now { background: var(--ink); color: var(--white); }
+  .b-past { background: var(--milk); color: var(--ink-muted); }
+  .kc-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .kc-name { font-size: 21px; line-height: 28px; font-weight: 700; }
+  .kc-price { font-family: var(--f-script); font-weight: 700; font-size: 28px; color: var(--brush-text); white-space: nowrap; }
+  .kc-teacher { font-family: var(--f-script); font-size: 24px; line-height: 1.1; }
+  .kc-meta { font-size: 14px; line-height: 21px; }
+  .want { border-radius: var(--r-xl); background: var(--poster); padding: 40px; display: flex; flex-wrap: wrap; align-items: center; gap: 20px 40px; }
+  .want-t { font-family: var(--f-script); font-size: 40px; line-height: 1.05; font-weight: 700; color: var(--brush-text); }
+  @media (max-width: 640px) { .want { padding: 28px 20px; } }
+</style>

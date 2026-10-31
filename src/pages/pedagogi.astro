@@ -1,0 +1,58 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import Img from '../components/Img.astro';
+import { url, isPlaceholder } from '../lib/util';
+const list = (await getCollection('trainers')).sort((a, b) => a.data.order - b.data.order);
+const tags = ['Танцы', 'Детям', 'Фитнес', '60+'];
+const bgs = ['var(--rose)', 'var(--rose-soft)', 'var(--blush)'];
+---
+<Base title="Педагоги" active="trainers" description="Педагоги студии танца «Свети» в Магнитогорске: латина, бальные, High Heels, хип-хоп, K-POP, детские группы, пилатес, йога, танцы 60+.">
+  <section class="wrap" style="padding-top:32px">
+    <nav class="crumbs" aria-label="Хлебные крошки"><a href={url('/')}>Главная</a> / Педагоги</nav>
+    <div class="script" style="font-size:30px; line-height:1; color:var(--berry); margin-bottom:8px">наша любимая команда</div>
+    <h1 class="h1">Педагоги</h1>
+    <p class="muted" style="margin-top:8px; max-width:620px">Педагоги, которые зажигают сердца и учат светить.</p>
+  </section>
+
+  <section class="wrap" style="padding-top:32px">
+    <div class="pills" role="group" aria-label="Направление" data-filter>
+      <button type="button" class="pill" data-tag="all" aria-pressed="true">Все<span class="count">{list.length}</span></button>
+      {tags.map((t) => <button type="button" class="pill" data-tag={t} aria-pressed="false">{t}<span class="count">{list.filter((p) => p.data.tags.includes(t)).length}</span></button>)}
+    </div>
+  </section>
+
+  <section class="wrap section-last" style="padding-top:32px">
+    <div class="grid" style="--min:220px; gap:32px 24px" data-list>
+      {list.map((p, i) => (
+        <article class="tr" data-tags={p.data.tags.join('|')}>
+          <Img src={p.data.photo} alt={p.data.name} label="Портрет" class="arch tr-img" bg={bgs[i % 3]} />
+          <h2 class="tr-n">{p.data.name}</h2>
+          <div class="muted tr-r">{p.data.role}</div>
+          {!isPlaceholder(p.data.bio) && <p class="tr-b">{p.data.bio}</p>}
+          <a href={url('/raspisanie/')} class="tr-l">Расписание педагога →</a>
+        </article>
+      ))}
+    </div>
+  </section>
+</Base>
+
+<script>
+  const btns = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-filter] [data-tag]'));
+  const cards = Array.from(document.querySelectorAll<HTMLElement>('[data-list] [data-tags]'));
+  btns.forEach((b) => b.addEventListener('click', () => {
+    const t = b.dataset.tag || 'all';
+    btns.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    cards.forEach((c) => { c.hidden = t !== 'all' && !(c.dataset.tags || '').split('|').includes(t); });
+  }));
+</script>
+
+<style>
+  .tr { display: flex; flex-direction: column; gap: 6px; }
+  .tr[hidden] { display: none; }
+  :global(.tr-img) { aspect-ratio: 3 / 4; margin-bottom: 8px; }
+  .tr-n { font-size: 18px; line-height: 25px; }
+  .tr-r { font-size: 14px; line-height: 20px; }
+  .tr-b { font-size: 14px; line-height: 21px; }
+  .tr-l { font-size: 14px; font-weight: 700; text-decoration: none; margin-top: 4px; }
+</style>

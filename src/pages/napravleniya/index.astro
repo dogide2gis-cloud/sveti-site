@@ -1,0 +1,75 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Img from '../../components/Img.astro';
+import { url } from '../../lib/util';
+const list = (await getCollection('directions')).sort((a, b) => a.data.order - b.data.order);
+const cats = ['Детям', 'Взрослым', 'Фитнес', '60+'];
+const bgs = ['var(--rose-soft)', 'var(--rose)', 'var(--blush)'];
+---
+<Base title="Направления" active="directions" description="Все направления студии танца «Свети» в Магнитогорске: детские группы с 3 лет, латина, бальные, High Heels, K-POP, хип-хоп, пилатес, йога, танцы 60+.">
+  <section class="wrap" style="padding-top:32px">
+    <nav class="crumbs" aria-label="Хлебные крошки"><a href={url('/')}>Главная</a> / Направления</nav>
+    <div class="row-head" style="margin-bottom:0">
+      <div>
+        <h1 class="h1">Направления</h1>
+        <p class="muted" style="margin-top:8px; max-width:560px">Для детей, взрослых и тех, кому 60+. Все занятия по одному абонементу в обоих филиалах.</p>
+      </div>
+      <a href={url('/raspisanie/')} class="btn btn-primary">Открыть расписание</a>
+    </div>
+  </section>
+
+  <section class="wrap" style="padding-top:32px">
+    <div class="pills" role="group" aria-label="Категории" data-filter>
+      <button type="button" class="pill" data-cat="all" aria-pressed="true">Все<span class="count">{list.length}</span></button>
+      {cats.map((c) => <button type="button" class="pill" data-cat={c} aria-pressed="false">{c}<span class="count">{list.filter((d) => d.data.category === c).length}</span></button>)}
+    </div>
+  </section>
+
+  <section class="wrap section-last" style="padding-top:32px">
+    <div class="grid" data-list>
+      {list.map((d, i) => (
+        <a href={url('/napravleniya/' + d.id + '/')} class="card dcard" data-cat={d.data.category}>
+          <Img src={d.data.photo} alt={d.data.title} label="Фото" class="arch dcard-img" bg={bgs[i % 3]} />
+          <span class="dcard-body">
+            <span class="dcard-tags"><span class="tag">{d.data.category}</span><span class="tag tag-grey">{d.data.age}</span></span>
+            <span class="dcard-t">{d.data.title}</span>
+            <span class="muted dcard-w">{d.data.trainers.join(', ')}</span>
+            <span class="dcard-more">Подробнее →</span>
+          </span>
+        </a>
+      ))}
+    </div>
+  </section>
+</Base>
+
+<script>
+  const root = document.querySelector('[data-filter]');
+  const cards = Array.from(document.querySelectorAll<HTMLElement>('[data-list] [data-cat]'));
+  const btns = Array.from(root?.querySelectorAll<HTMLButtonElement>('[data-cat]') ?? []);
+  const apply = (cat: string) => {
+    btns.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.cat === cat)));
+    cards.forEach((c) => { c.hidden = cat !== 'all' && c.dataset.cat !== cat; });
+  };
+  btns.forEach((b) => b.addEventListener('click', () => {
+    const cat = b.dataset.cat || 'all';
+    apply(cat);
+    const u = new URL(location.href);
+    if (cat === 'all') u.searchParams.delete('cat'); else u.searchParams.set('cat', cat);
+    history.replaceState(null, '', u);
+  }));
+  const start = new URLSearchParams(location.search).get('cat');
+  if (start && btns.some((b) => b.dataset.cat === start)) apply(start);
+</script>
+
+<style>
+  .dcard { display: flex; flex-direction: column; overflow: hidden; text-decoration: none; color: var(--ink); }
+  .dcard:hover { border-color: var(--rose); color: var(--ink); }
+  .dcard[hidden] { display: none; }
+  :global(.dcard-img) { margin: 14px 14px 0; height: 200px; border-radius: 140px 140px 12px 12px !important; }
+  .dcard-body { padding: 18px 22px 22px; display: flex; flex-direction: column; gap: 6px; flex-grow: 1; }
+  .dcard-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .dcard-t { font-size: 20px; line-height: 27px; font-weight: 700; margin-top: 4px; }
+  .dcard-w { font-size: 14px; line-height: 20px; flex-grow: 1; }
+  .dcard-more { margin-top: 8px; font-size: 15px; font-weight: 700; color: var(--berry); }
+</style>

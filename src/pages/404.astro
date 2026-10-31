@@ -1,0 +1,15 @@
+---
+import Base from '../layouts/Base.astro';
+import { url } from '../lib/util';
+---
+<Base title="Страница не найдена">
+  <section class="wrap section section-last" style="text-align:center">
+    <div class="script" style="font-size:40px; color:var(--berry)">ой…</div>
+    <h1 class="h1" style="margin:8px 0 16px">Такой страницы нет</h1>
+    <p class="muted" style="margin-bottom:28px">Возможно, она переехала. Начните с главной или загляните в расписание.</p>
+    <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap">
+      <a href={url('/')} class="btn btn-primary">На главную</a>
+      <a href={url('/raspisanie/')} class="btn btn-ghost">Расписание</a>
+    </div>
+  </section>
+</Base>

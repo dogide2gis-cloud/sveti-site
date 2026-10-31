@@ -1,0 +1,237 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Img from '../../components/Img.astro';
+import CallbackForm from '../../components/CallbackForm.astro';
+import { url, rub, dateShort, courseStatus, statusLabel } from '../../lib/util';
+
+export async function getStaticPaths() {
+  const list = await getCollection('courses', (c) => !c.data.draft);
+  return list.map((c) => ({ params: { slug: c.id }, props: { c } }));
+}
+const { c } = Astro.props;
+const d = c.data;
+const s = courseStatus(d.start, d.end);
+const title = d.poster_title || d.title;
+const others = (await getCollection('courses', (x) => !x.data.draft && x.id !== c.id))
+  .map((x) => ({ x, s: courseStatus(x.data.start, x.data.end) })).filter((o) => o.s !== 'past').slice(0, 3);
+const pageUrl = new URL(url('/kursy/' + c.id + '/'), Astro.site).toString();
+---
+<Base title={d.title} active="courses" bg="#F6E5E2" image={d.poster} description={`${d.title}${d.teacher ? ' с ' + d.teacher : ''} в студии «Свети», Магнитогорск. ${dateShort(d.start)}–${dateShort(d.end)}, ${d.days} ${d.time ? 'в ' + d.time : ''}. ${d.price ? rub(d.price) : ''}`}>
+  <section class="wrap" style="padding-top:24px">
+    <nav class="crumbs" aria-label="Хлебные крошки"><a href={url('/')}>Главная</a> / <a href={url('/kursy/')}>Курсы</a> / {d.title}</nav>
+    <div class="hero">
+      <div class="hero-t">
+        <div class="top">
+          <div class="kicker">Танцевальный<br>курс</div>
+          {d.teacher && (
+            <div class="sig">
+              <div class="sig-t">{d.teacher}</div>
+              <svg aria-hidden="true" width="190" height="16" viewBox="0 0 190 16"><path d="M4 10 C60 4 130 4 186 8" fill="none" stroke="#D9577A" stroke-width="2.5" stroke-linecap="round"/></svg>
+            </div>
+          )}
+        </div>
+        <h1 class="ptitle">{title}</h1>
+        <div class="when">
+          <div class="dates">
+            <svg aria-hidden="true" viewBox="0 0 240 110" preserveAspectRatio="none"><ellipse cx="120" cy="55" rx="114" ry="46" fill="none" stroke="#D9577A" stroke-width="2.5" transform="rotate(-8 120 55)"/></svg>
+            <span>{dateShort(d.start)} —<br>{dateShort(d.end)}</span>
+          </div>
+          <div class="when-r">
+            <div class="days">{d.days}</div>
+            {d.time && (
+              <div class="brush-badge">
+                <svg aria-hidden="true" viewBox="0 0 400 100" preserveAspectRatio="none"><path fill="#E8899F" d="M8 58 C40 26 120 18 200 22 S360 14 392 38 C398 62 380 78 330 82 C250 90 120 94 30 86 C10 82 2 70 8 58 Z"/></svg>
+                <span>в {d.time}</span>
+              </div>
+            )}
+            {d.branch && <div class="place"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="#3A2A30"><path d="M12 2a7 7 0 0 0-7 7c0 5.3 7 13 7 13s7-7.7 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>{d.branch}</div>}
+          </div>
+        </div>
+        <div class="bottom">
+          {d.tagline.length > 0 && <ul class="tagline">{d.tagline.map((t) => <li>{t}</li>)}</ul>}
+          {d.price > 0 && (
+            <div class="price-badge">
+              <svg aria-hidden="true" viewBox="0 0 400 160" preserveAspectRatio="none"><path fill="#E8899F" d="M14 70 C30 22 140 8 230 12 S380 18 392 60 C400 110 360 140 280 148 C190 156 70 158 26 132 C6 118 4 96 14 70 Z"/></svg>
+              <span class="pb-k">Стоимость</span>
+              <span class="pb-v">{rub(d.price)}</span>
+              {d.lessons > 0 && <span class="pb-n">за {d.lessons} занятий</span>}
+            </div>
+          )}
+        </div>
+      </div>
+      <Img src={d.photo} alt={d.teacher || d.title} label="Фото педагога без текста поверх" class="hero-img" bg="#EFD6D3" />
+    </div>
+    <div class="cta-row">
+      {s !== 'past'
+        ? <a href="#signup" class="btn btn-primary">Записаться на курс</a>
+        : <span class="tag tag-grey" style="font-size:14px;padding:10px 16px">Курс завершён</span>}
+      <span class="status">{statusLabel[s]}{d.seats_note && s !== 'past' ? ' · ' + d.seats_note : ''}</span>
+    </div>
+  </section>
+
+  {d.gains.length > 0 && (
+    <section class="wrap section">
+      <h2 class="sh">Что ты получишь</h2>
+      <div class="grid" style="--min:240px; gap:20px">
+        {d.gains.map((g, i) => (
+          <div class="gain">
+            <div class="gain-n">{String(i + 1).padStart(2, '0')}</div>
+            <div class="gain-t">{g.title}</div>
+            <div class="muted gain-x">{g.text}</div>
+          </div>
+        ))}
+      </div>
+    </section>
+  )}
+
+  {d.program.length > 0 && (
+    <section class="wrap section two">
+      <div class="two-l">
+        <h2 class="sh" style="margin-bottom:12px">Программа</h2>
+        <p class="muted">{d.lessons ? `${d.lessons} занятий` : ''}{d.days ? ` · ${d.days}` : ''}</p>
+      </div>
+      <div class="two-r">
+        {d.program.map((p) => <div class="prog"><div class="prog-k">{p.title}</div><div class="prog-x">{p.text}</div></div>)}
+      </div>
+    </section>
+  )}
+
+  {d.teacher_bio && (
+    <section class="wrap section">
+      <div class="teacher">
+        <Img src={d.photo} alt={d.teacher} label="Портрет" class="arch teacher-img" bg="var(--rose-soft)" />
+        <div class="teacher-t">
+          <div class="kicker muted">Ведёт курс</div>
+          <div class="teacher-n">{d.teacher}</div>
+          <p>{d.teacher_bio}</p>
+        </div>
+      </div>
+    </section>
+  )}
+
+  {(d.for_whom.length > 0 || d.bring.length > 0) && (
+    <section class="wrap section">
+      <div class="grid" style="--min:320px; gap:20px">
+        {d.for_whom.length > 0 && <div class="box"><div class="box-t">Тебе подойдёт, если…</div><ul>{d.for_whom.map((x) => <li>{x}</li>)}</ul></div>}
+        {d.bring.length > 0 && <div class="box"><div class="box-t">Что взять с собой</div><ul>{d.bring.map((x) => <li>{x}</li>)}</ul></div>}
+      </div>
+    </section>
+  )}
+
+  {s !== 'past' && (
+    <section id="signup" class="wrap section">
+      <div class="signup">
+        <div class="signup-l">
+          <div class="signup-pt">{title}</div>
+          <div class="signup-meta">{dateShort(d.start)} — {dateShort(d.end)} · {d.days}{d.time && ` в ${d.time}`}<br>{d.branch}{d.lessons ? ` · ${d.lessons} занятий` : ''}</div>
+          {d.price > 0 && <div class="signup-p">{rub(d.price)}</div>}
+          {d.seats_note && <div class="signup-meta">{d.seats_note}</div>}
+        </div>
+        <div class="signup-r">
+          <CallbackForm title="Забронировать место" text="Оставь телефон — администратор перезвонит и подтвердит запись." button="Записаться на курс" variant="light" withName context={d.title} />
+        </div>
+      </div>
+    </section>
+  )}
+
+  {d.poster && (
+    <section class="wrap section share">
+      <img src={url(d.poster)} alt={`Афиша курса ${d.title}`} class="share-img" loading="lazy">
+      <div class="share-t">
+        <div class="sh" style="font-size:52px">Позови подругу</div>
+        <p style="margin:8px 0 20px">Вдвоём веселее — отправь ей ссылку на курс.</p>
+        <div class="share-btns">
+          <a class="btn btn-light btn-inline" href={`https://vk.com/share.php?url=${encodeURIComponent(pageUrl)}`} rel="noopener">Поделиться во ВКонтакте</a>
+          <a class="btn btn-light btn-inline" href={`https://t.me/share/url?url=${encodeURIComponent(pageUrl)}`} rel="noopener">Отправить в Telegram</a>
+        </div>
+      </div>
+    </section>
+  )}
+
+  <section class="wrap section section-last">
+    <div class="row-head" style="margin-bottom:24px"><h2 class="sh" style="margin:0">Другие курсы</h2><a href={url('/kursy/')} class="link-more">Все курсы →</a></div>
+    <div class="grid" style="--min:260px; gap:20px">
+      {others.map(({ x, s: st }) => (
+        <a href={url('/kursy/' + x.id + '/')} class="other">
+          <span class="tag" style="background:var(--berry);color:#fff;align-self:flex-start">{statusLabel[st]}</span>
+          <span class="other-t">{x.data.poster_title || x.data.title}</span>
+          <span class="muted" style="font-size:14px">{x.data.teacher} · {dateShort(x.data.start)}–{dateShort(x.data.end)}</span>
+        </a>
+      ))}
+      {others.length === 0 && <a href={url('/kursy/')} class="other"><span class="other-t">Смотреть все курсы</span></a>}
+    </div>
+  </section>
+</Base>
+
+<style>
+  .hero { display: flex; flex-wrap: wrap; gap: 32px 48px; align-items: stretch; }
+  .hero-t { flex: 1 1 540px; min-width: 0; padding: 16px 0 24px; }
+  .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+  .kicker { font-size: 15px; line-height: 22px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; }
+  .sig { padding: 0 8px; min-width: 0; }
+  .sig svg { max-width: 100%; height: auto; }
+  .sig-t { font-family: var(--f-script); font-weight: 600; font-size: 44px; line-height: .95; transform: rotate(-6deg); max-width: 220px; }
+  .ptitle { font-family: var(--f-brush); font-weight: 400; font-size: clamp(76px, 13vw, 160px); line-height: .85; color: var(--brush-text); margin: 18px 0 0; transform: rotate(-3deg); transform-origin: left center; overflow-wrap: anywhere; }
+  .when { display: flex; flex-wrap: wrap; align-items: center; gap: 24px 40px; margin-top: 36px; }
+  .dates { position: relative; padding: 18px 34px; }
+  .dates svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .dates span { position: relative; display: block; font-size: 42px; line-height: 1.1; font-weight: 500; }
+  .when-r { display: flex; flex-direction: column; gap: 10px; }
+  .days { font-size: 18px; line-height: 24px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; max-width: 260px; }
+  .brush-badge { position: relative; align-self: flex-start; padding: 6px 26px 10px; }
+  .brush-badge svg, .price-badge svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .brush-badge span { position: relative; font-family: var(--f-script); font-weight: 700; font-size: 40px; line-height: 1.1; }
+  .place { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 600; }
+  .bottom { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 24px; margin-top: 40px; }
+  .tagline { padding: 0 0 0 16px; list-style: none; border-left: 2px solid var(--brush-text); display: flex; flex-direction: column; gap: 6px; font-size: 15px; letter-spacing: .14em; text-transform: uppercase; font-weight: 600; }
+  .price-badge { position: relative; padding: 18px 40px 24px; display: flex; flex-direction: column; }
+  .price-badge span { position: relative; }
+  .pb-k { font-size: 14px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
+  .pb-v { font-family: var(--f-script); font-weight: 700; font-size: 72px; line-height: .9; }
+  .pb-n { font-size: 13px; }
+  :global(.hero-img) { flex: 1 1 360px; min-height: 600px; border-radius: 24px; }
+  .cta-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding-top: 28px; }
+  .cta-row .btn { min-height: 60px; padding: 0 36px; font-size: 17px; font-weight: 700; }
+  .status { font-size: 15px; font-weight: 600; }
+  .sh { font-family: var(--f-script); font-weight: 700; font-size: clamp(48px, 6vw, 64px); line-height: 1; color: var(--brush-text); margin-bottom: 36px; }
+  .gain { padding: 28px; border-radius: 24px; background: var(--milk); display: flex; flex-direction: column; gap: 10px; min-height: 200px; }
+  .gain-n { font-family: var(--f-brush); font-size: 56px; line-height: 1; color: var(--brush); }
+  .gain-t { font-size: 18px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+  .gain-x { font-size: 15px; line-height: 23px; }
+  .two { display: flex; flex-wrap: wrap; gap: 24px 64px; }
+  .two-l { flex: 1 1 280px; }
+  .two-r { flex: 2 1 520px; }
+  .prog { display: flex; gap: 24px; padding: 22px 0; border-top: 1.5px dashed #D9A3AF; }
+  .prog-k { font-family: var(--f-script); font-weight: 700; font-size: 32px; line-height: 1; color: var(--brush-text); min-width: 120px; }
+  .prog-x { font-size: 17px; font-weight: 600; }
+  .teacher { border-radius: var(--r-xl); background: var(--milk); padding: 40px; display: flex; flex-wrap: wrap; gap: 32px 56px; align-items: center; }
+  :global(.teacher-img) { flex: 0 1 300px; aspect-ratio: 4 / 5; }
+  .teacher-t { flex: 1 1 380px; }
+  .teacher-n { font-family: var(--f-script); font-weight: 700; font-size: 60px; line-height: 1; margin: 4px 0 16px; }
+  .box { padding: 32px; border-radius: 24px; border: 2px solid var(--brush); }
+  .box-t { font-family: var(--f-script); font-weight: 700; font-size: 42px; line-height: 1.05; color: var(--brush-text); margin-bottom: 12px; }
+  .box ul { padding-left: 20px; display: flex; flex-direction: column; gap: 8px; }
+  .signup { border-radius: var(--r-xl); background: var(--ink); color: var(--milk); padding: 40px; display: flex; flex-wrap: wrap; gap: 32px 48px; }
+  .signup-l { flex: 1 1 320px; display: flex; flex-direction: column; gap: 14px; }
+  .signup-r { flex: 1.4 1 420px; min-width: 0; color: var(--ink); }
+  .signup-pt { font-family: var(--f-brush); font-size: 72px; line-height: .9; color: var(--rose); }
+  .signup-meta { font-size: 16px; line-height: 26px; color: #F3E3E9; }
+  .signup-p { font-family: var(--f-script); font-weight: 700; font-size: 64px; line-height: 1; }
+  .signup-r :global(.cb) { padding: 32px; }
+  .signup-r :global(.cb-text) { flex-basis: 100%; }
+  .share { display: flex; flex-wrap: wrap; gap: 32px 56px; align-items: center; }
+  .share-img { flex: 0 1 340px; width: 100%; max-width: 340px; border-radius: var(--r-lg); }
+  .share-t { flex: 1 1 340px; }
+  .share-btns { display: flex; flex-wrap: wrap; gap: 10px; }
+  .other { display: flex; flex-direction: column; gap: 6px; padding: 24px; border-radius: var(--r-lg); background: var(--milk); color: var(--ink); text-decoration: none; }
+  .other-t { font-family: var(--f-script); font-weight: 700; font-size: 38px; line-height: 1.05; color: var(--brush-text); margin-top: 8px; }
+  @media (max-width: 640px) {
+    :global(.hero-img) { min-height: 420px; }
+    .sig-t { font-size: 34px; }
+    .dates span { font-size: 32px; }
+    .teacher, .signup { padding: 24px 20px; }
+    .signup-r :global(.cb) { padding: 20px; }
+    .pb-v { font-size: 56px; }
+  }
+</style>

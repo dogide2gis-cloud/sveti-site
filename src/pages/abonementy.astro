@@ -1,0 +1,85 @@
+---
+import Base from '../layouts/Base.astro';
+import prices from '../data/prices.json';
+import { url, rub } from '../lib/util';
+const bg = ['var(--rose)', 'var(--rose-soft)', 'var(--blush)', 'var(--rose-soft)'];
+const startTab = prices.groups.findIndex((g) => g.name === 'Взрослые');
+---
+<Base title="Абонементы и цены" active="prices" description="Цены студии танца «Свети»: пробное занятие от 300 ₽, абонементы для детей и взрослых на 4–24 занятия, скидки семьям, студентам и пенсионерам.">
+  <section class="wrap" style="padding-top:32px">
+    <nav class="crumbs" aria-label="Хлебные крошки"><a href={url('/')}>Главная</a> / Абонементы</nav>
+    <h1 class="h1">Абонементы и цены</h1>
+    <p class="muted" style="margin-top:8px; max-width:640px">Один абонемент — на все направления в обоих филиалах. Действует 30 дней.</p>
+  </section>
+
+  <section class="wrap" style="padding-top:32px">
+    <div class="pills" role="tablist" aria-label="Категория">
+      {prices.groups.map((g, i) => <button type="button" class="pill" role="tab" id={`t${i}`} aria-controls={`p${i}`} aria-selected={i === startTab ? 'true' : 'false'} aria-pressed={i === startTab ? 'true' : 'false'} data-tab={i}>{g.name}</button>)}
+    </div>
+  </section>
+
+  {prices.groups.map((g, i) => (
+    <section class="wrap" style="padding-top:20px" role="tabpanel" id={`p${i}`} aria-labelledby={`t${i}`} hidden={i !== startTab} data-panel={i}>
+      <p class="muted" style="margin-bottom:20px">{g.note}</p>
+      <div class="grid" style="--min:250px; gap:16px">
+        {g.plans.map((p) => (
+          <div class={`plan ${p.popular ? 'plan-pop' : ''}`}>
+            <div class="plan-h"><span class="plan-t">{p.title}</span>{p.popular && <span class="pop">Популярный</span>}</div>
+            <div class="plan-p">{rub(p.price)}</div>
+            <div class="muted plan-n">{p.note}</div>
+            <a href={url('/raspisanie/')} class={`btn ${p.popular ? 'btn-primary' : 'btn-dark'}`}>{p.title === 'Пробное' ? 'Записаться на пробное' : 'Выбрать время'}</a>
+          </div>
+        ))}
+      </div>
+    </section>
+  ))}
+
+  <section class="wrap section">
+    <h2 class="h2" style="margin-bottom:24px">Скидки и бонусы</h2>
+    <div class="grid" style="--min:240px; gap:16px">
+      {prices.discounts.map((k, i) => (
+        <div class="disc" style={`background:${bg[i % 4]}`}>
+          <div class="disc-v">{k.value}</div>
+          <div class="disc-t">{k.title}</div>
+          <div class="disc-x">{k.text}</div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section id="rules" class="wrap section section-last rules">
+    <h2 class="h2 rules-l">Условия</h2>
+    <div class="rules-r">
+      {prices.rules.map((r) => <div class="rule"><div class="rule-k">{r.title}</div><div class="muted">{r.text}</div></div>)}
+    </div>
+  </section>
+</Base>
+
+<script>
+  const tabs = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-tab]'));
+  const panels = Array.from(document.querySelectorAll<HTMLElement>('[data-panel]'));
+  tabs.forEach((t) => t.addEventListener('click', () => {
+    tabs.forEach((x) => { const on = x === t; x.setAttribute('aria-selected', String(on)); x.setAttribute('aria-pressed', String(on)); });
+    panels.forEach((p) => { p.hidden = p.dataset.panel !== t.dataset.tab; });
+  }));
+</script>
+
+<style>
+  .plan { display: flex; flex-direction: column; gap: 10px; padding: 28px; border-radius: var(--r-lg); background: var(--white); border: 1px solid var(--line); }
+  .plan-pop { background: var(--rose); border-color: var(--rose); }
+  .plan-pop .muted { color: var(--ink); }
+  .plan-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .plan-t { font-size: 18px; font-weight: 700; }
+  .pop { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: var(--r-sm); background: var(--ink); color: var(--white); }
+  .plan-p { font-family: var(--f-display); font-size: 52px; line-height: 1.05; font-weight: 600; }
+  .plan-n { font-size: 14px; line-height: 20px; flex-grow: 1; }
+  .disc { padding: 24px; border-radius: var(--r-lg); }
+  .disc-v { font-family: var(--f-display); font-size: 56px; line-height: 1; font-weight: 600; }
+  .disc-t { font-size: 16px; font-weight: 700; margin-top: 8px; }
+  .disc-x { font-size: 14px; line-height: 20px; margin-top: 4px; }
+  .rules { display: flex; flex-wrap: wrap; gap: 24px 64px; }
+  .rules-l { flex: 1 1 260px; }
+  .rules-r { flex: 2 1 520px; }
+  .rule { display: flex; flex-wrap: wrap; gap: 4px 20px; padding: 20px 0; border-top: 1px solid var(--line); }
+  .rule-k { min-width: 220px; font-weight: 700; }
+</style>
