@@ -159,6 +159,7 @@ collections:
               - { name: label, label: Подпись, widget: string }
           - { name: quote, label: Цитата (идея бренда), widget: text }
           - { name: quote_author, label: Автор цитаты, widget: string }
+          - { name: quote_photo, label: Фото автора цитаты, widget: image, required: false }
           - name: events
             label: Жизнь студии
             widget: list

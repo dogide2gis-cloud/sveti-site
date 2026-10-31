@@ -129,8 +129,11 @@ const promoBg = ['var(--rose)', 'var(--rose-soft)', 'var(--blush)', 'var(--rose-
   <section class="section">
     <div class="idea">
       <div class="wrap idea-in">
-        <img src={url('/uploads/logo-white.png')} alt="Свети — Танцуй Люби" class="idea-logo" width="420" height="137" loading="lazy">
+        {home.quote_photo
+          ? <img src={url(home.quote_photo)} alt={home.quote_author} class="idea-photo" width="380" height="507" loading="lazy">
+          : <img src={url('/uploads/logo-white.png')} alt="Свети — Танцуй Люби" class="idea-logo" width="420" height="137" loading="lazy">}
         <blockquote class="idea-q">
+          {home.quote_photo && <img src={url('/uploads/logo-white.png')} alt="" class="idea-mark" width="220" height="72" loading="lazy">}
           <p>{home.quote}</p>
           <footer>{home.quote_author}</footer>
         </blockquote>
@@ -254,6 +257,8 @@ const promoBg = ['var(--rose)', 'var(--rose-soft)', 'var(--blush)', 'var(--rose-
   .idea { background: var(--rose); }
   .idea-in { display: flex; flex-wrap: wrap; align-items: center; gap: 40px 80px; padding-top: 88px; padding-bottom: 88px; }
   .idea-logo { flex: 0 1 400px; width: 100%; max-width: 400px; height: auto; }
+  .idea-photo { flex: 0 1 380px; width: 100%; max-width: 380px; aspect-ratio: 3 / 4; object-fit: cover; object-position: center 25%; border-radius: var(--r-arch); border: 8px solid var(--milk); }
+  .idea-mark { width: 200px; height: auto; margin-bottom: 24px; }
   .idea-q { flex: 1 1 440px; margin: 0; }
   .idea-q p { font-family: var(--f-display); font-size: clamp(26px, 3vw, 36px); line-height: 1.25; font-weight: 500; }
   .idea-q footer { margin-top: 20px; font-size: 15px; font-weight: 600; }
