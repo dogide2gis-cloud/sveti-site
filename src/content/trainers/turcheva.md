@@ -1,6 +1,6 @@
 ---
 name: София Турчева
-role: K-POP 12+
+role: K-POP
 tags:
 - Детям
 photo: ''

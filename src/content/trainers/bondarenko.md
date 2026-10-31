@@ -1,6 +1,6 @@
 ---
 name: Анжела Бондаренко
-role: High heels 14+
+role: High Heels
 tags:
 - Танцы
 photo: ''

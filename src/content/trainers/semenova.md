@@ -1,6 +1,6 @@
 ---
 name: Ульяна Семенова
-role: K-POP 12+
+role: K-POP
 tags:
 - Детям
 photo: ''
