@@ -124,6 +124,48 @@ collections:
       - { name: order, label: Порядок, widget: number, value_type: int, default: 100 }
 
   # ---------- СТРАНИЦЫ И НАСТРОЙКИ ----------
+  # ---------- БАЗА ЗНАНИЙ (для сотрудников) ----------
+  - name: kb
+    label: База знаний
+    label_singular: Статья
+    description: 'Внутренние материалы для сотрудников: /kb/. Руководитель видит все статьи; в «Кому видна» отметьте остальные должности. ТЕСТ: пока без паролей — не публикуйте персональные данные, суммы в кассе и пароли.'
+    folder: src/content/kb
+    extension: md
+    format: frontmatter
+    create: true
+    slug: '{{title}}'
+    media_folder: /public/uploads/kb
+    public_folder: /uploads/kb
+    summary: '{{section}} · {{title}}'
+    sortable_fields: [title, section, order, updated]
+    view_groups:
+      - { label: Раздел, field: section }
+    fields:
+      - { name: title, label: Название статьи, widget: string }
+      - { name: section, label: Раздел, widget: select, default: 'Статьи', options: ['Общее', 'Регламенты', 'Скрипты продаж', 'Шпаргалки', 'Fitbase', 'Обучение', 'Статьи'] }
+      - name: roles
+        label: Кому видна (кроме руководителя)
+        widget: select
+        multiple: true
+        required: false
+        hint: 'Руководитель видит всё. Ничего не выбрано — статья только для руководителя.'
+        options:
+          - { label: Админ ресепшен, value: reception }
+          - { label: Онлайн-админ, value: online }
+          - { label: Тренер, value: trainer }
+      - { name: summary, label: Коротко о чём статья, widget: text, required: false, hint: 'Одно-два предложения — показываются в карточке и ищутся поиском.' }
+      - { name: updated, label: Дата обновления, widget: datetime, format: 'YYYY-MM-DD', date_format: 'DD.MM.YYYY', time_format: false, required: false }
+      - { name: order, label: Порядок в разделе, widget: number, value_type: int, default: 100, hint: 'Меньше — выше.' }
+      - name: files
+        label: Файлы для скачивания (PDF, презентации)
+        widget: list
+        required: false
+        fields:
+          - { name: title, label: Название кнопки, widget: string }
+          - { name: file, label: Файл, widget: file }
+      - { name: draft, label: Черновик (не показывать), widget: boolean, default: false, required: false }
+      - { name: body, label: Текст статьи, widget: markdown, hint: 'Заголовки, списки, таблицы, цитаты. Заголовки 2-го уровня попадают в содержание статьи.' }
+
   - name: pages
     label: Страницы и настройки
     files:

@@ -1,0 +1,88 @@
+---
+import { getCollection, render } from 'astro:content';
+import Kb from '../../layouts/Kb.astro';
+import { url } from '../../lib/util';
+import { roleLabel, dateRu } from '../../lib/kb';
+
+export async function getStaticPaths() {
+  const list = await getCollection('kb', (a) => !a.data.draft);
+  return list.map((a) => ({ params: { slug: a.id }, props: { a } }));
+}
+const { a } = Astro.props;
+const d = a.data;
+const { Content, headings } = await render(a);
+const toc = headings.filter((h) => h.depth === 2);
+const who = ['Руководитель', ...d.roles.map(roleLabel)].join(', ');
+---
+<Kb title={d.title}>
+  <nav class="crumbs"><a href={url('/kb/')}>База знаний</a> / {d.section}</nav>
+  <article class="kb-art" data-roles={d.roles.join(' ')}>
+    <header class="kb-art-h">
+      <h1 class="h2">{d.title}</h1>
+      {d.summary && <p class="muted kb-sum">{d.summary}</p>}
+      <div class="kb-art-meta">
+        <span>Для: {who}</span>
+        {d.updated && <span>Обновлено {dateRu(d.updated)}</span>}
+      </div>
+      {d.files.length > 0 && (
+        <div class="kb-files">
+          {d.files.map((f) => <a class="btn btn-primary btn-inline" href={url(f.file)} download>Скачать: {f.title}</a>)}
+        </div>
+      )}
+    </header>
+    <div class="kb-body-wrap">
+      {toc.length > 2 && (
+        <aside class="kb-toc">
+          <div class="eyebrow">Содержание</div>
+          <ul>{toc.map((h) => <li><a href={'#' + h.slug}>{h.text}</a></li>)}</ul>
+        </aside>
+      )}
+      <div class="kb-body"><Content /></div>
+    </div>
+  </article>
+  <div class="kb-deny" data-deny hidden>
+    <h1 class="h2">Этот материал не для вашей должности</h1>
+    <p class="muted">Статья доступна: {who}. Если она нужна вам для работы — напишите руководителю.</p>
+    <p><a class="btn btn-dark btn-inline" href={url('/kb/')}>К списку материалов</a></p>
+  </div>
+</Kb>
+
+<script is:inline>
+  (function () {
+    var art = document.querySelector('.kb-art'), deny = document.querySelector('[data-deny]');
+    function upd() { deny.hidden = !art.hidden; }
+    document.addEventListener('kb-role', upd); upd();
+  })();
+</script>
+
+<style>
+  .kb-art-h { max-width: 820px; margin-bottom: 32px; }
+  .kb-sum { margin-top: 12px; font-size: 18px; }
+  .kb-art-meta { display: flex; flex-wrap: wrap; gap: 6px 20px; margin-top: 14px; font-size: 14px; color: var(--ink-muted); }
+  .kb-files { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+  .kb-files .btn { min-height: 44px; font-size: 15px; padding: 0 20px; }
+  .kb-body-wrap { display: grid; grid-template-columns: 240px minmax(0, 820px); gap: 48px; align-items: start; }
+  .kb-body-wrap:not(:has(.kb-toc)) { grid-template-columns: minmax(0, 820px); }
+  .kb-toc { position: sticky; top: 96px; font-size: 14px; }
+  .kb-toc ul { list-style: none; padding-left: 0; margin-top: 10px; display: grid; gap: 6px; }
+  .kb-toc a { color: var(--ink); text-decoration: none; }
+  .kb-toc a:hover { color: var(--berry); }
+  .kb-deny { max-width: 640px; display: grid; gap: 16px; }
+  @media (max-width: 960px) {
+    .kb-body-wrap { grid-template-columns: 1fr; gap: 24px; }
+    .kb-toc { position: static; background: var(--white); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 16px 20px; }
+  }
+  .kb-body :global(h2) { font-family: var(--f-display); font-weight: 600; font-size: 32px; line-height: 1.15; margin: 44px 0 14px; scroll-margin-top: 96px; }
+  .kb-body :global(h2:first-child) { margin-top: 0; }
+  .kb-body :global(h3) { font-family: var(--f-display); font-weight: 600; font-size: 23px; color: var(--berry-deep); margin: 26px 0 8px; }
+  .kb-body :global(p) { margin: 0 0 14px; }
+  .kb-body :global(ul), .kb-body :global(ol) { margin: 0 0 16px; padding-left: 24px; }
+  .kb-body :global(li) { margin-bottom: 6px; }
+  .kb-body :global(li > ul), .kb-body :global(li > ol) { margin: 6px 0 0; }
+  .kb-body :global(blockquote) { margin: 0 0 16px; padding: 14px 18px; background: var(--white); border: 1px solid var(--line); border-left: 3px solid var(--berry); border-radius: 4px 16px 16px 4px; }
+  .kb-body :global(blockquote p:last-child) { margin-bottom: 0; }
+  .kb-body :global(em) { color: var(--ink-muted); }
+  .kb-body :global(table) { width: 100%; border-collapse: collapse; margin: 0 0 20px; font-size: 15px; background: var(--white); border-radius: 12px; overflow: hidden; display: block; overflow-x: auto; }
+  .kb-body :global(th) { text-align: left; background: var(--blush); padding: 10px 12px; font-size: 13px; }
+  .kb-body :global(td) { padding: 9px 12px; border-top: 1px solid var(--line); vertical-align: top; }
+</style>

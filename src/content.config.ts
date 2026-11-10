@@ -57,4 +57,19 @@ const courses = defineCollection({
   })
 });
 
-export const collections = { directions, trainers, courses };
+// База знаний для сотрудников. Руководитель видит всё; roles — какие ещё должности видят статью.
+const kb = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/kb' }),
+  schema: z.object({
+    title: z.string(),
+    section: z.string().default('Общее'),
+    roles: z.array(z.enum(['reception', 'online', 'trainer'])).default([]),
+    summary: z.string().default(''),
+    updated: z.coerce.date().optional(),
+    order: z.number().default(100),
+    files: z.array(z.object({ title: z.string(), file: z.string() })).default([]),
+    draft: z.boolean().default(false)
+  })
+});
+
+export const collections = { directions, trainers, courses, kb };

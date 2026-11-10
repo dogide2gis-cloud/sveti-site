@@ -1,0 +1,93 @@
+---
+import '../styles/global.css';
+import { url } from '../lib/util';
+import { ROLES } from '../lib/kb';
+interface Props { title: string }
+const { title } = Astro.props;
+---
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{title} — База знаний «Свети»</title>
+  <meta name="theme-color" content="#FFFAF7">
+  <link rel="icon" href={url('/favicon.svg')} type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=Cormorant:wght@500;600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script is:inline>
+    try { var r = localStorage.getItem('sveti-kb-role'); if (r) document.documentElement.dataset.role = r; } catch (e) {}
+  </script>
+</head>
+<body class="kb">
+  <header class="kb-hdr">
+    <div class="wrap kb-hdr-in">
+      <a class="kb-brand" href={url('/kb/')}>
+        <img src={url('/uploads/logo-ink.png')} alt="Свети" width="96" height="31">
+        <span>База знаний</span>
+      </a>
+      <div class="kb-role">
+        <span class="kb-role-l">Я —</span>
+        <div class="pills" role="group" aria-label="Моя должность">
+          {ROLES.map((r) => <button type="button" class="pill" data-set-role={r.id} aria-pressed="false">{r.label}</button>)}
+        </div>
+      </div>
+    </div>
+  </header>
+  <div class="kb-test">Тестовая версия: разделы пока открыты всем, кто знает адрес. Не размещайте здесь персональные данные и пароли.</div>
+  <main id="main" class="wrap kb-main">
+    <slot />
+  </main>
+  <footer class="wrap kb-foot">Студия танца «Свети» · внутренние материалы для сотрудников</footer>
+
+  <script is:inline>
+    (function () {
+      var KEY = 'sveti-kb-role';
+      function get() { try { return localStorage.getItem(KEY) || ''; } catch (e) { return ''; } }
+      function apply(role) {
+        document.documentElement.dataset.role = role || '';
+        document.querySelectorAll('[data-set-role]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.setRole === role)); });
+        document.querySelectorAll('[data-roles]').forEach(function (el) {
+          var list = el.dataset.roles.split(' ');
+          var ok = !role || role === 'leader' || list.indexOf(role) >= 0;
+          el.hidden = !ok;
+          el.classList.toggle('kb-denied', !ok);
+        });
+        document.querySelectorAll('[data-section]').forEach(function (sec) {
+          sec.hidden = !sec.querySelector('[data-roles]:not([hidden])');
+        });
+        var pick = document.querySelector('[data-pick-role]'); if (pick) pick.hidden = !!role;
+        document.dispatchEvent(new CustomEvent('kb-role', { detail: role }));
+      }
+      document.querySelectorAll('[data-set-role]').forEach(function (b) {
+        b.addEventListener('click', function () { try { localStorage.setItem(KEY, b.dataset.setRole); } catch (e) {} apply(b.dataset.setRole); });
+      });
+      apply(get());
+    })();
+  </script>
+</body>
+</html>
+
+<style is:global>
+  [hidden] { display: none !important; }
+  body.kb { background: var(--milk); }
+  .kb-hdr { background: var(--white); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 10; }
+  .kb-hdr-in { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; justify-content: space-between; padding-top: 12px; padding-bottom: 12px; }
+  .kb-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--ink); }
+  .kb-brand img { height: 31px; width: auto; }
+  .kb-brand span { font-family: var(--f-display); font-size: 24px; font-weight: 600; line-height: 1; padding-left: 12px; border-left: 1px solid var(--line-strong); }
+  .kb-role { display: flex; align-items: center; gap: 10px; }
+  .kb-role-l { font-size: 14px; color: var(--ink-muted); font-weight: 600; }
+  .kb-role .pill { min-height: 38px; padding: 0 14px; font-size: 14px; }
+  .kb-test { background: var(--rose-soft); color: var(--berry-deep); font-size: 13px; line-height: 18px; text-align: center; padding: 8px 16px; }
+  .kb-main { padding-top: 40px; padding-bottom: 72px; }
+  .kb-foot { font-size: 13px; color: var(--ink-muted); padding-bottom: 32px; }
+  @media (max-width: 760px) {
+    .kb-hdr { position: static; }
+    .kb-role { width: 100%; flex-direction: column; align-items: flex-start; gap: 6px; }
+    .kb-role .pills { border-radius: 18px; }
+    .kb-main { padding-top: 28px; }
+  }
+</style>
