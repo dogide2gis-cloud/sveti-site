@@ -15,20 +15,31 @@ const toc = headings.filter((h) => h.depth === 2);
 const who = ['Руководитель', ...d.roles.map(roleLabel)].join(', ');
 ---
 <Kb title={d.title}>
-  <nav class="crumbs"><a href={url('/kb/')}>База знаний</a> / {d.section}</nav>
+  <nav class="kb-nav" aria-label="Навигация">
+    <a class="kb-back" href={url('/kb/')} data-back><span aria-hidden="true">←</span> Назад</a>
+    <div class="kb-path">
+      <div class="kb-path-1"><a href={url('/kb/')}>База знаний</a> / {d.section}</div>
+      <div class="kb-path-2"><span data-cur-title>{d.title}</span><span data-cur-sec></span></div>
+    </div>
+  </nav>
+
   <article class="kb-art" data-roles={d.roles.join(' ')}>
-    <header class="kb-art-h">
-      <h1 class="h2">{d.title}</h1>
-      {d.summary && <p class="muted kb-sum">{d.summary}</p>}
-      <div class="kb-art-meta">
-        <span>Для: {who}</span>
-        {d.updated && <span>Обновлено {dateRu(d.updated)}</span>}
-      </div>
-      {d.files.length > 0 && (
-        <div class="kb-files">
-          {d.files.map((f) => <a class="btn btn-primary btn-inline" href={url(f.file)} download>Скачать: {f.title}</a>)}
+    <header class="kb-hero">
+      <div class="kb-hero-t">
+        <div class="eyebrow">{d.section}</div>
+        <h1 class="h2">{d.title}</h1>
+        {d.summary && <p class="kb-sum">{d.summary}</p>}
+        <div class="kb-art-meta">
+          <span>Для: {who}</span>
+          {d.updated && <span>Обновлено {dateRu(d.updated)}</span>}
         </div>
-      )}
+        {d.files.length > 0 && (
+          <div class="kb-files">
+            {d.files.map((f) => <a class="btn btn-primary btn-inline" href={url(f.file)} download>Скачать: {f.title}</a>)}
+          </div>
+        )}
+      </div>
+      <div class="kb-hero-arch" aria-hidden="true"><img src={url('/uploads/logo-ink.png')} alt=""></div>
     </header>
     <div class="kb-body-wrap">
       {toc.length > 2 && (
@@ -39,12 +50,17 @@ const who = ['Руководитель', ...d.roles.map(roleLabel)].join(', ');
       )}
       <div class="kb-body"><Content /></div>
     </div>
+    <div class="kb-end">
+      <a class="btn btn-ghost btn-inline" href={url('/kb/')}>← Ко всем материалам</a>
+      <span class="script">помогаем сиять другим</span>
+    </div>
   </article>
   <div class="kb-deny" data-deny hidden>
     <h1 class="h2">Этот материал не для вашей должности</h1>
     <p class="muted">Статья доступна: {who}. Если она нужна вам для работы — напишите руководителю.</p>
     <p><a class="btn btn-dark btn-inline" href={url('/kb/')}>К списку материалов</a></p>
   </div>
+  <button type="button" class="kb-up" data-up hidden aria-label="Наверх">↑</button>
 </Kb>
 
 <script is:inline>
@@ -52,37 +68,149 @@ const who = ['Руководитель', ...d.roles.map(roleLabel)].join(', ');
     var art = document.querySelector('.kb-art'), deny = document.querySelector('[data-deny]');
     function upd() { deny.hidden = !art.hidden; }
     document.addEventListener('kb-role', upd); upd();
+
+    var body = document.querySelector('.kb-body');
+    // Номер раздела — в «арку», как в PDF
+    body.querySelectorAll('h2').forEach(function (h) {
+      var m = h.textContent.match(/^(\d+)\.\s+(.*)$/);
+      h.dataset.short = m ? m[2] : h.textContent;
+      if (m) { h.textContent = m[2]; var n = document.createElement('span'); n.className = 'kb-num'; n.textContent = m[1]; h.prepend(n); h.classList.add('kb-h-num'); }
+    });
+    body.querySelectorAll('p').forEach(function (p) {
+      var f = p.firstElementChild;
+      // Подпись перед репликой или сообщением — плашка
+      if (f && f.tagName === 'STRONG' && p.firstChild === f && p.nextElementSibling && p.nextElementSibling.tagName === 'BLOCKQUOTE') p.classList.add('kb-label');
+      // Примечание курсивом
+      if (p.childNodes.length === 1 && f && f.tagName === 'EM' && p.parentElement.tagName !== 'BLOCKQUOTE') p.classList.add('kb-note');
+      // «Когда: A → B → C» — цепочка шагов
+      if (f && f.tagName === 'STRONG' && /^Когда:?$/.test(f.textContent.trim()) && p.textContent.indexOf('→') > 0) {
+        var ol = document.createElement('ol'); ol.className = 'kb-flow';
+        p.textContent.replace(/^Когда:\s*/, '').split('→').forEach(function (t) {
+          var m = t.trim().match(/^(.*?)\s*\((.*)\)$/), li = document.createElement('li'), b = document.createElement('b');
+          b.textContent = m ? m[1] : t.trim(); li.appendChild(b);
+          if (m) { var s = document.createElement('span'); s.textContent = m[2]; li.appendChild(s); }
+          ol.appendChild(li);
+        });
+        p.replaceWith(ol);
+      }
+    });
+    // [Имя], [тренер] — подсветка мест, куда подставляют своё
+    var w = document.createTreeWalker(body, NodeFilter.SHOW_TEXT), nodes = [], n;
+    while ((n = w.nextNode())) if (/\[[^\]\n]{1,40}\]/.test(n.nodeValue)) nodes.push(n);
+    nodes.forEach(function (t) {
+      var frag = document.createDocumentFragment();
+      t.nodeValue.split(/(\[[^\]\n]{1,40}\])/).forEach(function (part) {
+        if (/^\[.*\]$/.test(part)) { var s = document.createElement('span'); s.className = 'kb-ph'; s.textContent = part.slice(1, -1); frag.appendChild(s); }
+        else if (part) frag.appendChild(document.createTextNode(part));
+      });
+      t.replaceWith(frag);
+    });
+
+    // Навигация при прокрутке: текущий раздел и кнопка «наверх»
+    var hs = [].slice.call(body.querySelectorAll('h2')), cur = document.querySelector('[data-cur-sec]'), up = document.querySelector('[data-up]');
+    var nav = document.querySelector('.kb-nav'), tick = false;
+    function onScroll() {
+      tick = false;
+      var name = '';
+      for (var i = 0; i < hs.length; i++) { if (hs[i].getBoundingClientRect().top < 120) name = hs[i].dataset.short; else break; }
+      cur.textContent = name ? ' · ' + name : '';
+      up.hidden = window.scrollY < 700;
+      nav.classList.toggle('is-stuck', window.scrollY > 40);
+    }
+    window.addEventListener('scroll', function () { if (!tick) { tick = true; requestAnimationFrame(onScroll); } }, { passive: true });
+    onScroll();
+    up.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+    // «Назад» возвращает в список на то же место, если пришли из него
+    document.querySelector('[data-back]').addEventListener('click', function (e) {
+      try { if (document.referrer && new URL(document.referrer).pathname.replace(/\/$/, '') === new URL(this.href).pathname.replace(/\/$/, '') && history.length > 1) { e.preventDefault(); history.back(); } } catch (err) {}
+    });
   })();
 </script>
 
 <style>
-  .kb-art-h { max-width: 820px; margin-bottom: 32px; }
-  .kb-sum { margin-top: 12px; font-size: 18px; }
+  .kb-nav { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; font-size: 14px; }
+  .kb-back { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 16px; border-radius: 999px; background: var(--white); border: 1px solid var(--line-strong); color: var(--ink); font-weight: 700; text-decoration: none; }
+  .kb-back:hover { background: var(--blush); color: var(--ink); }
+  .kb-path { min-width: 0; color: var(--ink-muted); }
+  .kb-path a { color: var(--ink-muted); }
+  .kb-path-2 { display: none; font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kb-path-2 [data-cur-sec] { font-weight: 500; color: var(--berry-deep); }
+
+  .kb-hero { position: relative; overflow: hidden; display: flex; gap: 32px; align-items: center; justify-content: space-between; background: var(--white); border: 1px solid var(--line); border-radius: var(--r-xl); padding: 36px 40px; margin-bottom: 40px; }
+  .kb-hero::before { content: ""; position: absolute; right: -90px; top: -120px; width: 380px; height: 380px; border-radius: 50%; background: var(--blush); }
+  .kb-hero-t { position: relative; max-width: 760px; }
+  .kb-hero h1 { margin-top: 8px; }
+  .kb-sum { margin-top: 12px; font-size: 18px; color: var(--ink-muted); }
   .kb-art-meta { display: flex; flex-wrap: wrap; gap: 6px 20px; margin-top: 14px; font-size: 14px; color: var(--ink-muted); }
   .kb-files { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
   .kb-files .btn { min-height: 44px; font-size: 15px; padding: 0 20px; }
+  .kb-hero-arch { position: relative; flex: none; width: 190px; height: 200px; border-radius: 95px 95px 16px 16px; background: var(--rose); display: flex; align-items: center; justify-content: center; }
+  .kb-hero-arch img { width: 150px; }
+
   .kb-body-wrap { display: grid; grid-template-columns: 240px minmax(0, 820px); gap: 48px; align-items: start; }
   .kb-body-wrap:not(:has(.kb-toc)) { grid-template-columns: minmax(0, 820px); }
-  .kb-toc { position: sticky; top: 96px; font-size: 14px; }
-  .kb-toc ul { list-style: none; padding-left: 0; margin-top: 10px; display: grid; gap: 6px; }
+  .kb-toc { position: sticky; top: 96px; font-size: 14px; background: var(--white); border: 1px solid var(--line); border-radius: 120px 120px 20px 20px; padding: 44px 22px 22px; }
+  .kb-toc .eyebrow { text-align: center; }
+  .kb-toc ul { list-style: none; padding-left: 0; margin-top: 12px; display: grid; gap: 8px; }
   .kb-toc a { color: var(--ink); text-decoration: none; }
   .kb-toc a:hover { color: var(--berry); }
+  .kb-end { display: flex; flex-wrap: wrap; gap: 16px 28px; align-items: center; margin-top: 48px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .kb-end .script { font-size: 28px; color: var(--berry); }
   .kb-deny { max-width: 640px; display: grid; gap: 16px; }
+  .kb-up { position: fixed; right: 18px; bottom: 18px; width: 48px; height: 48px; border-radius: 24px 24px 8px 8px; border: 0; background: var(--berry); color: var(--white); font-size: 20px; font-weight: 700; cursor: pointer; box-shadow: 0 6px 18px rgba(58, 42, 48, .22); z-index: 20; }
+
   @media (max-width: 960px) {
     .kb-body-wrap { grid-template-columns: 1fr; gap: 24px; }
-    .kb-toc { position: static; background: var(--white); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 16px 20px; }
+    .kb-toc { position: static; border-radius: var(--r-lg); padding: 16px 20px; }
+    .kb-toc .eyebrow { text-align: left; }
+    .kb-hero-arch { display: none; }
   }
-  .kb-body :global(h2) { font-family: var(--f-display); font-weight: 600; font-size: 32px; line-height: 1.15; margin: 44px 0 14px; scroll-margin-top: 96px; }
+  @media (max-width: 760px) {
+    .kb-nav { position: sticky; top: 0; z-index: 15; margin: -28px -16px 20px; padding: 10px 16px; background: var(--milk); border-bottom: 1px solid transparent; gap: 12px; }
+    .kb-nav.is-stuck { background: var(--white); border-bottom-color: var(--line); box-shadow: 0 4px 14px rgba(58, 42, 48, .07); }
+    .kb-back { min-height: 40px; padding: 0 14px; }
+    .kb-path-1 { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .kb-path-2 { display: block; font-size: 14px; }
+    .kb-hero { padding: 24px 20px; border-radius: var(--r-lg); margin-bottom: 28px; }
+    .kb-hero::before { width: 220px; height: 220px; right: -90px; top: -110px; }
+    .kb-sum { font-size: 16px; }
+    .kb-files .btn { width: 100%; }
+  }
+
+  .kb-body :global(h2) { font-family: var(--f-display); font-weight: 600; font-size: 32px; line-height: 1.12; margin: 52px 0 16px; padding-bottom: 14px; border-bottom: 1px solid var(--line); scroll-margin-top: 96px; }
   .kb-body :global(h2:first-child) { margin-top: 0; }
-  .kb-body :global(h3) { font-family: var(--f-display); font-weight: 600; font-size: 23px; color: var(--berry-deep); margin: 26px 0 8px; }
+  .kb-body :global(h2.kb-h-num) { display: flex; align-items: center; gap: 16px; }
+  .kb-body :global(.kb-num) { flex: none; width: 52px; height: 58px; border-radius: 26px 26px 8px 8px; background: var(--rose); display: flex; align-items: center; justify-content: center; font-size: 28px; }
+  .kb-body :global(h3) { font-family: var(--f-display); font-weight: 600; font-size: 24px; color: var(--berry-deep); margin: 28px 0 10px; }
   .kb-body :global(p) { margin: 0 0 14px; }
-  .kb-body :global(ul), .kb-body :global(ol) { margin: 0 0 16px; padding-left: 24px; }
-  .kb-body :global(li) { margin-bottom: 6px; }
-  .kb-body :global(li > ul), .kb-body :global(li > ol) { margin: 6px 0 0; }
-  .kb-body :global(blockquote) { margin: 0 0 16px; padding: 14px 18px; background: var(--white); border: 1px solid var(--line); border-left: 3px solid var(--berry); border-radius: 4px 16px 16px 4px; }
+  .kb-body :global(ul), .kb-body :global(ol) { margin: 0 0 18px; padding-left: 24px; }
+  .kb-body :global(li) { margin-bottom: 7px; }
+  .kb-body :global(li > ul), .kb-body :global(li > ol) { margin: 7px 0 0; }
+  .kb-body :global(ul > li::marker) { color: var(--berry); }
+  /* Нумерованные шаги — с розовыми «арками» */
+  .kb-body :global(> ol:not(.kb-flow)) { list-style: none; padding-left: 0; counter-reset: st; background: var(--rose-soft); border-radius: var(--r-lg); padding: 18px 20px 10px; }
+  .kb-body :global(> ol:not(.kb-flow) > li) { counter-increment: st; position: relative; padding-left: 46px; margin-bottom: 12px; min-height: 34px; }
+  .kb-body :global(> ol:not(.kb-flow) > li::before) { content: counter(st); position: absolute; left: 0; top: -2px; width: 32px; height: 35px; border-radius: 16px 16px 5px 5px; background: var(--white); display: flex; align-items: center; justify-content: center; font-family: var(--f-display); font-weight: 600; font-size: 19px; }
+  /* Реплики и сообщения — как пузыри чата */
+  .kb-body :global(blockquote) { margin: 0 0 20px; padding: 15px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 20px 20px 20px 5px; box-shadow: 0 2px 10px rgba(200, 50, 110, .05); }
   .kb-body :global(blockquote p:last-child) { margin-bottom: 0; }
+  .kb-body :global(.kb-label) { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 22px 0 8px; font-size: 14px; color: var(--ink-muted); }
+  .kb-body :global(.kb-label strong) { background: var(--berry); color: var(--white); font-size: 13px; padding: 4px 13px; border-radius: 999px; }
+  .kb-body :global(.kb-label em) { font-style: normal; }
+  .kb-body :global(.kb-note) { font-size: 15px; padding: 2px 0 2px 14px; border-left: 2px solid var(--rose); margin: -6px 0 20px; }
+  .kb-body :global(.kb-note em) { font-style: normal; color: var(--ink-muted); }
   .kb-body :global(em) { color: var(--ink-muted); }
-  .kb-body :global(table) { width: 100%; border-collapse: collapse; margin: 0 0 20px; font-size: 15px; background: var(--white); border-radius: 12px; overflow: hidden; display: block; overflow-x: auto; }
-  .kb-body :global(th) { text-align: left; background: var(--blush); padding: 10px 12px; font-size: 13px; }
-  .kb-body :global(td) { padding: 9px 12px; border-top: 1px solid var(--line); vertical-align: top; }
+  .kb-body :global(.kb-ph) { background: var(--rose-soft); color: var(--berry-deep); border-radius: 5px; padding: 0 5px; font-weight: 600; font-size: .94em; }
+  .kb-body :global(.kb-flow) { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; padding: 0; margin: 0 0 22px; }
+  .kb-body :global(.kb-flow li) { flex: 1 1 130px; background: var(--blush); border-radius: 12px; padding: 9px 13px; margin: 0; }
+  .kb-body :global(.kb-flow b) { display: block; font-size: 14px; color: var(--berry-deep); }
+  .kb-body :global(.kb-flow span) { font-size: 13px; color: var(--ink-muted); }
+  .kb-body :global(table) { width: 100%; border-collapse: collapse; margin: 0 0 22px; font-size: 15px; background: var(--white); border: 1px solid var(--line); border-radius: 16px; display: block; overflow-x: auto; }
+  .kb-body :global(th) { text-align: left; background: var(--blush); padding: 11px 14px; font-size: 13px; color: var(--berry-deep); }
+  .kb-body :global(td) { padding: 10px 14px; border-top: 1px solid var(--line); vertical-align: top; }
+  @media (max-width: 760px) {
+    .kb-body :global(h2) { font-size: 27px; margin-top: 40px; scroll-margin-top: 76px; }
+    .kb-body :global(.kb-num) { width: 44px; height: 50px; font-size: 24px; }
+    .kb-body :global(> ol:not(.kb-flow)) { padding: 16px 14px 8px; }
+  }
 </style>
